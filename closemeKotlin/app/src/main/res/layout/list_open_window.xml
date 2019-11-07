@@ -1,0 +1,246 @@
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/openWindowListLayout"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="10dp"
+    android:layout_marginTop="10dp"
+    android:layout_marginEnd="10dp"
+    android:background="@drawable/background_round_stroke_complete_blue">
+
+
+    <CheckBox
+        android:id="@+id/notifyCheckbox"
+        style="@style/headlineSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:text="Notify on temperature."
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/temperatureText"
+        style="@style/headlineSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        android:text="/"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="@+id/temperatureProgress"
+        app:layout_constraintStart_toStartOf="@+id/temperatureProgress"
+        app:layout_constraintTop_toBottomOf="@+id/temperatureProgress" />
+
+    <TextView
+        android:id="@+id/humditiyText"
+        style="@style/headlineSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        android:text="/"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="@+id/humidityProgress"
+        app:layout_constraintStart_toStartOf="@+id/humidityProgress"
+        app:layout_constraintTop_toBottomOf="@+id/humidityProgress" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="@+id/tempEditProgress"
+        app:layout_constraintStart_toStartOf="@+id/tempEditProgress"
+        app:layout_constraintTop_toBottomOf="@+id/tempEditProgress" >
+
+        <TextView
+            android:id="@+id/tempEditMinus"
+            style="@style/headlineSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp"
+            android:layout_weight="1"
+            android:text="-  "
+            android:textAlignment="textStart"
+            android:textSize="20sp" />
+
+        <TextView
+            android:id="@+id/tempEditPlus"
+            style="@style/headlineSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp"
+            android:layout_weight="1"
+            android:text="   +"
+            android:textSize="20sp" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/showOnMapTxt"
+        style="@style/headlineSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        android:text="@string/show_on_map"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="@+id/mapProgress"
+        app:layout_constraintStart_toStartOf="@+id/mapProgress"
+        app:layout_constraintTop_toBottomOf="@+id/mapProgress" />
+
+    <TextView
+        android:id="@+id/deviceNumber"
+        style="@style/headlineBig"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:paddingBottom="10dp"
+
+        android:text="Building Beacon Map"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <View
+        android:id="@+id/view"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginStart="5dp"
+        android:layout_marginTop="10dp"
+        android:layout_marginEnd="5dp"
+        android:layout_marginBottom="10dp"
+        android:background="@color/Gray"
+        app:layout_constraintBottom_toTopOf="@+id/humidityProgress"
+        app:layout_constraintTop_toBottomOf="@+id/deviceNumber"
+        tools:layout_editor_absoluteX="5dp" />
+
+
+    <com.dinuscxj.progressbar.CircleProgressBar
+        android:id="@+id/mapProgress"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:layout_marginTop="8dp"
+        app:drawBackgroundOutsideProgress="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/tempEditProgress"
+        app:layout_constraintTop_toTopOf="parent"
+        app:progress_end_color="@color/Red"
+        app:progress_start_color="@color/Green"
+        app:progress_start_degree="-90"
+        app:progress_stroke_width="2dp"
+        app:progress_text_color="@color/White0"
+        app:progress_text_size="14sp"
+        app:style="solid_line" />
+
+    <com.dinuscxj.progressbar.CircleProgressBar
+        android:id="@+id/humidityProgress"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:layout_marginTop="8dp"
+        app:drawBackgroundOutsideProgress="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/tempEditProgress"
+        app:layout_constraintStart_toEndOf="@+id/temperatureProgress"
+        app:layout_constraintTop_toTopOf="parent"
+        app:progress_end_color="@color/DodgerBlue"
+        app:progress_start_color="@color/LightBlue"
+        app:progress_start_degree="-90"
+        app:progress_stroke_width="2dp"
+        app:progress_text_color="@color/White0"
+        app:progress_text_size="14sp"
+        app:style="solid_line" />
+
+    <com.dinuscxj.progressbar.CircleProgressBar
+        android:id="@+id/temperatureProgress"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:layout_marginTop="8dp"
+        app:drawBackgroundOutsideProgress="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/humidityProgress"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:progress_end_color="@color/progressRed"
+        app:progress_start_color="@color/OrangeRed"
+        app:progress_start_degree="-90"
+        app:progress_stroke_width="2dp"
+        app:progress_text_color="@color/White0"
+        app:progress_text_size="14sp"
+        app:style="solid_line" />
+
+    <com.dinuscxj.progressbar.CircleProgressBar
+        android:id="@+id/tempEditProgress"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:layout_marginTop="8dp"
+        app:drawBackgroundOutsideProgress="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/mapProgress"
+        app:layout_constraintStart_toEndOf="@id/humidityProgress"
+        app:layout_constraintTop_toTopOf="parent"
+        app:progress_end_color="@color/Red"
+        app:progress_start_color="@color/Green"
+        app:progress_start_degree="-90"
+        app:progress_stroke_width="2dp"
+        app:progress_text_color="@color/White0"
+        app:progress_text_size="14sp"
+        app:style="solid_line" />
+
+    <ImageView
+        android:id="@+id/imageView2"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginTop="8dp"
+        android:src="@drawable/humidity_vektor"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="@+id/humidityProgress"
+        app:layout_constraintStart_toStartOf="@+id/humidityProgress"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageView
+        android:id="@+id/mapImage"
+        style="@style/informationBig"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_marginTop="8dp"
+        android:src="@drawable/map_colored_vektor"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="@+id/mapProgress"
+        app:layout_constraintStart_toStartOf="@+id/mapProgress"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageView
+        android:id="@+id/imageView"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_marginTop="8dp"
+        android:padding="8dp"
+        android:gravity="center"
+        android:src="@drawable/temperate_vektor"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="@+id/temperatureProgress"
+        app:layout_constraintStart_toStartOf="@+id/temperatureProgress"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/tempEditText"
+        android:layout_width="wrap_content"
+        android:layout_height="50dp"
+        android:layout_marginTop="8dp"
+        android:gravity="center"
+        android:padding="8dp"
+        android:text="/"
+        android:textColor="@color/colorPrimary"
+        android:textSize="25sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="@+id/tempEditProgress"
+        app:layout_constraintStart_toStartOf="@+id/tempEditProgress"
+        app:layout_constraintTop_toTopOf="parent" />
+
+</android.support.constraint.ConstraintLayout>
