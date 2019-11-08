@@ -24,7 +24,6 @@
 
 #include <Module.h>
 
-#ifdef ACTIVATE_ALARM_MODULE
 
 #include <AdvertisingController.h>
 #include <BoardConfig.h>
@@ -94,8 +93,6 @@ private:
 	struct AlarmModuleConfiguration: ModuleConfiguration
 	{
 		//Insert more persistent config values here
-		u8 enableBarometer;
-
 	};
 
 	enum AlarmModuleTriggerActionMessages {
@@ -158,8 +155,7 @@ private:
 #pragma pack(pop)
 
 public:
-	AlarmModule(u8 moduleId, Node* node, ConnectionManager* cm,
-			const char* name);
+	AlarmModule();
 	void MeshMessageReceivedHandler(BaseConnection* connection, BaseConnectionSendData* sendData, connPacketHeader* packetHeader);
 
 	void ButtonHandler(u8 buttonId, u32 holdTimeDs);
@@ -187,5 +183,4 @@ public:
 	void UpdateGpioState();
 };
 
-#endif
 

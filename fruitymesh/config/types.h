@@ -241,6 +241,7 @@ enum class ModuleId : u8{
 
 	//Other Modules
 	MY_CUSTOM_MODULE=200,
+	ALARM_MODULE=201,
 
 	//Invalid Module: 0xFF is the flash memory default and is therefore invalid
 	INVALID_MODULE=255

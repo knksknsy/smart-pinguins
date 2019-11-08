@@ -63,7 +63,6 @@ typedef struct
 
 #pragma pack(pop)
 
-#ifdef ACTIVATE_ASSET_MODULE
 
 #include <AdvertisingController.h>
 
@@ -130,30 +129,6 @@ private:
 	u32 lastHumidityReading;
 
 
-	void InitialiseLis2dh12();
-	ret_code_t ConfigureLis2dh12forStandby();
-	ret_code_t ConfigureLis2dh12forMeasurement();
-	void HandleLis2dh12Interrupt();
-
-	void addValuesToCircular(i32 x, i32 y, i32 z);
-	void refreshVariancesCircular();
-	void MovementEndDetection(ThreeDimStruct* vel, ThreeDimStruct* acc);
-	void CalculateVariances();
-	void CalculateAverage();
-
-	void calibration();
-	void CalculateVelocityFromAcceleration(ThreeDimStruct * acc, ThreeDimStruct * prev_acc, ThreeDimStruct * vel);
-	void copyThreeDimStuct(ThreeDimStruct * into, ThreeDimStruct * from);
-	void GetAccelerationData(ThreeDimStruct * acc);
-
-	u8 CalcEffectiveVelocity(ThreeDimStruct * vel);
-	void MovementEndHandler();
-	u8 ConvertVelocityToADVFormat(ThreeDimStruct * vel);
-
-	u32 EnableLis2dh12Pin1Interrupt(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t polarity, nrf_drv_gpiote_evt_handler_t handler);
-
-	void InitialiseBME280();
-	void UpdateBarometerData();
 
 
 	void SendAssetDataToMesh(ThreeDimStruct * acc, ThreeDimStruct * vel, u32 appTimerDs,u32 bar);
@@ -165,13 +140,10 @@ public:
 
 	DECLARE_CONFIG_AND_PACKED_STRUCT (AssetModuleConfiguration);
 
-	static bool lis2dh12WakeupInterruptWasTriggered;
 
-	AssetModule(u8 moduleId, Node* node, ConnectionManager* cm,
-			const char* name);
+	AssetModule();
 
-	void ConfigurationLoadedHandler();
-    void GetLinearAcceleration(ThreeDimStruct * acc, ThreeDimStruct * linear_acc);
+	void ConfigurationLoadedHandler(ModuleConfiguration* migratableConfig, u16 migratableConfigLength) override;
 	void ResetToDefaultConfiguration();
 
 	void BroadcastAssetAdvertisingPacket(u16 advIntervalMs);
@@ -184,9 +156,5 @@ public:
 
 	void UpdateAssetDataAdvPacket(u16 advertisingIntervalinMs, u8 accelerometerData, u8 barometerData);
 
-	void GetTilt(ThreeDimStruct * acc);
-
-	static void Lis2dh12Int1Handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action);
 };
 
-#endif

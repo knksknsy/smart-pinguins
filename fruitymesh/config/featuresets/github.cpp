@@ -38,6 +38,8 @@
 #include "IoModule.h"
 #include "MeshAccessModule.h"
 #include "GlobalState.h"
+#include "AlarmModule.h"
+#include "AssetModule.h"
 
 void setFeaturesetConfiguration_github(ModuleConfiguration* config, void* module)
 {
@@ -74,8 +76,8 @@ u32 initializeModules_github(bool createModule)
 	size += GS->InitializeModule<EnrollmentModule>(createModule);
 	size += GS->InitializeModule<IoModule>(createModule);
 	size += GS->InitializeModule<MeshAccessModule>(createModule);
-	//size += GS->InitializeModule<AssetModule>(createModule);
-	//size += GS->InitializeModule<AlarmModule>(createModule);
+	size += GS->InitializeModule<AssetModule>(createModule);
+	size += GS->InitializeModule<AlarmModule>(createModule);
 
 	return size;
 }
