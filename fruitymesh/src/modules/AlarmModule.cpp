@@ -66,7 +66,7 @@ AlarmModule::AlarmModule() :
 	UpdateGpioState();
 	RequestAlarmUpdatePacket();
 	BroadcastAlarmAdvertisingPacket();
-	logt("ALARM_SYSTEM", "Started");
+	logt("NODE", "Started MIRO");
 
 	ResetToDefaultConfiguration();
 
@@ -74,7 +74,7 @@ AlarmModule::AlarmModule() :
 
 void AlarmModule::ButtonHandler(u8 buttonId, u32 holdTimeDs) {
 	//Send alarm update message
-	logt("ALARM_SYSTEM", "Button pressed %u. Pressed time: %u", buttonId,
+	logt("CONFIG", "Button pressed %u. Pressed time: %u", buttonId,
 			holdTimeDs);
 	isActivated = !isActivated;
 	isActivated ? BlinkGreenLed() : BlinkRedLed();
@@ -103,7 +103,7 @@ void AlarmModule::ConfigurationLoadedHandler() {
 
 #endif
 
-	logt("ASSET_MODULE", "ConfigHandler");
+	logt("CONFIG", "AlarmModule Config Loaded");
 
 
 }
