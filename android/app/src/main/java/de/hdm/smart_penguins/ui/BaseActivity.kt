@@ -1,7 +1,6 @@
 package de.hdm.smart_penguins.ui
 
 import android.Manifest
-import android.app.Activity
 import android.app.AlertDialog
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
@@ -13,23 +12,21 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
 import androidx.annotation.Nullable
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import de.hdm.smart_penguins.R
+import de.hdm.smart_penguins.SmartApplication
 import de.hdm.smart_penguins.data.Constants
 import de.hdm.smart_penguins.data.callbacks.UpdateCallback
 import de.hdm.smart_penguins.data.manager.ConnectionManager
-import de.hdm.smart_penguins.di.component.ApplicationComponent
-import de.hdm.smart_penguins.di.module.ConnectionModule
 import java.io.File
 import javax.inject.Inject
 
-
-class BaseActivity : Activity() {
+open class BaseActivity : AppCompatActivity() {
 
     @Inject
-    internal var connectionManager: ConnectionManager? = null
+    internal lateinit var connectionManager: ConnectionManager
 
-    internal var applicationComponent: ApplicationComponent? = null
     private var isBluetoothDialogShown: Boolean = false
     private var mBroadCastReceiver: BroadcastReceiver? = null
     private var mUpdateCallback: UpdateCallback? = null
@@ -86,9 +83,16 @@ class BaseActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        getApplicationComponent()!!.inject(this)
+        initInjection()
         val filter = IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED)
         registerReceiver(bleCallback, filter)
+    }
+
+    private fun initInjection() {
+        if(getSmartApplication().activityComponent == null){
+            getSmartApplication().createActivityComponent()
+        }
+        getSmartApplication().activityComponent?.inject(this);
     }
 
     protected override fun onDestroy() {
@@ -106,14 +110,6 @@ class BaseActivity : Activity() {
         isShown = false
     }
 
-    fun getApplicationComponent(): ApplicationComponent? {
-        if (applicationComponent == null) {
-            applicationComponent = DaggerApplicationComponent.builder()
-                .connectionModule(ConnectionModule(this))
-                .build()
-        }
-        return applicationComponent
-    }
 
 
     protected fun checkPermissions(permissions: Array<String>): Boolean {
@@ -144,14 +140,16 @@ class BaseActivity : Activity() {
     }
 
     protected fun importProfileWithCamera() {
-        startActivityForResult(
-            Intent(this, CameraActivity::class.java),
-            Constants.BARCODE_READER_RESULT_CODE
+        startActivity(
+            Intent(this@BaseActivity, QrScannerActivity::class.java)
         )
     }
 
 
-    protected override fun onActivityResult(requestCode: Int, resultCode: Int, @Nullable data: Intent?) {
+    protected override fun onActivityResult(
+        requestCode: Int,
+        resultCode: Int, @Nullable data: Intent?
+    ) {
         super.onActivityResult(requestCode, resultCode, data)
 
         if (requestCode == Constants.BARCODE_READER_RESULT_CODE && data != null
@@ -161,7 +159,7 @@ class BaseActivity : Activity() {
             var profile: File? = null
             try {
                 val decodedQRCode =
-                   data.getStringExtra(Constants.BARCODE_READER_RESPONSE_CODE)
+                    data.getStringExtra(Constants.BARCODE_READER_RESPONSE_CODE)
 
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -219,5 +217,7 @@ class BaseActivity : Activity() {
     companion object {
         private val TAG = "BASE_ACTIVITY"
     }
-
+    fun getSmartApplication() : SmartApplication{
+        return application as SmartApplication
+    }
 }

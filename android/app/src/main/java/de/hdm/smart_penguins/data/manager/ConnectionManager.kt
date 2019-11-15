@@ -1,6 +1,5 @@
 package de.hdm.smart_penguins.data.manager
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Handler
 import android.os.ParcelUuid
@@ -15,9 +14,11 @@ import de.hdm.smart_penguins.data.model.BleNode
 import de.hdm.smart_penguins.data.model.NodeList
 import no.nordicsemi.android.support.v18.scanner.*
 import java.util.*
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class ConnectionManager private constructor(context: Context) {
-    private val context = context;
+@Singleton
+class  ConnectionManager @Inject constructor(context: Context) {
     private var listener: ((BleNode) -> Unit)? = null
     private var mScanner: BluetoothLeScannerCompat? = null
     val nodeList = NodeList()
@@ -27,22 +28,7 @@ class ConnectionManager private constructor(context: Context) {
     private val mScanResultRunnable = Runnable { this.initBLEScanner() }
     private val mScanResultHandler = Handler()
 
-    //Providing the application context which will live through the entire process makes this warning obsolete
-    @SuppressLint("StaticFieldLeak")
-    private var mInstance: ConnectionManager? = null
-
     private val TAG = "CONNECTION_MANAGER"
-
-    fun getInstance(context: Context): ConnectionManager? {
-        if (mInstance == null) {
-            synchronized(ConnectionManager::class.java) {
-                if (mInstance == null) {
-                    mInstance = ConnectionManager(context.applicationContext)
-                }
-            }
-        }
-        return mInstance
-    }
 
     private val scanCallback = object : ScanCallback() {
 
@@ -72,7 +58,7 @@ class ConnectionManager private constructor(context: Context) {
                 ))
                 if (isMeshBroadCastMessage) {
                     val node = BleNode(scanResult)
-                    if (node.messageMeshAccessBroadcast!!.messageType === Constants.MESSAGE_TYPE_BROADCAST && node.messageMeshAccessBroadcast!!.isConnectable) {
+                    if (node.messageMeshAccessBroadcast!!.messageType == Constants.MESSAGE_TYPE_BROADCAST && node.messageMeshAccessBroadcast!!.isConnectable) {
                         nodeList.addNode(node)
                     }
                 }

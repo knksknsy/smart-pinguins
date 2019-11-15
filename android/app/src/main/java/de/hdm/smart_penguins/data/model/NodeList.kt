@@ -10,9 +10,6 @@ import java.util.*
 class NodeList : ArrayList<BleNode>() {
     private val TAG = "NodeList"
 
-    private val compareByRSSI =
-        { o1, o2 -> Integer.compare(-o1.getCurrentRssi(), -o2.getCurrentRssi()) }
-
     fun clearNodes() {
         synchronized(this) {
             val iterator = this.iterator()
@@ -57,7 +54,7 @@ class NodeList : ArrayList<BleNode>() {
 
 
     fun sort() {
-        Collections.sort(this, compareByRSSI)
+        Collections.sort(this, kotlin.Comparator { o1, o2 -> Integer.compare(-o1.currentRssi, -o2.currentRssi) })
     }
 
 

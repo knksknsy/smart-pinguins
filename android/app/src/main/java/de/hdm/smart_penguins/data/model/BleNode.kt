@@ -65,7 +65,7 @@ class BleNode : Parcelable {
         if (scanResult.scanRecord != null) {
             val bytes = scanResult.scanRecord!!.bytes
             if (bytes != null && bytes.size > MESSAGE_SIZE_MESH_BROADCAST) {
-                return MessageMeshAccessBroadcast(bytes)
+                return MessageMeshAccessBroadcast()
             }
         }
         return null
