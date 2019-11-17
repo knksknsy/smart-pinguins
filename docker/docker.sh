@@ -31,7 +31,7 @@ function build_image {
 	echo -e "${RED}Docker image 'docker-nrf5' not created.${NC}"
 	echo -e "${GREEN}Creating 'docker-nrf5' image...${NC}"
 	
-	docker build -t docker-nrf5 .
+	docker build --no-cache -t docker-nrf5 .
 	
 	echo -e "${GREEN}Created Docker image 'docker-nrf5'.${NC}"
 }
@@ -59,9 +59,5 @@ fi
 
 eval "$(docker-machine env default)"
 
-# docker run -ti --rm --name nrf5 --privileged -v /dev:/dev --mount type=bind,source=${FULL_PATH},target=/smart-pinguins docker-nrf5 /bin/bash
-docker run -ti --rm --name nrf5 --device /dev:/dev -v ${FULL_PATH}:/smart-pinguins docker-nrf5 /bin/bash
-# docker run -ti --rm --name nrf5 -v ${FULL_PATH}:/smart-pinguins docker-nrf5 /bin/bash
-
-
-
+docker run -ti --rm --name nrf5 --privileged -v /dev/ttyUSB0:/dev/ttyUSB0 --mount type=bind,source=${FULL_PATH},target=/smart-pinguins docker-nrf5 /bin/bash
+# docker run -ti --rm --name nrf5 --device /dev/ttyUSB0:/dev/ttyUSB0 -v ${FULL_PATH}:/smart-pinguins docker-nrf5 /bin/bash

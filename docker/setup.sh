@@ -1,8 +1,4 @@
 #!/bin/bash
-RED='\033[0;31m'
-YELLOW='\033[1;33m'
-GREEN='\033[0;32m'
-NC='\033[0m'
 
 function main {
     install_tools
@@ -13,7 +9,7 @@ function main {
     install_python_dependencies
     setup_build_environments
 
-    echo "${GREEN}Docker image 'docker-nrf5' created.${NC}"
+    echo "Docker image 'docker-nrf5' created."
 }
 
 function fn_cd {
@@ -21,7 +17,7 @@ function fn_cd {
 }
 
 function install_tools {
-    echo "${GREEN}Installing tools...${NC}"
+    echo "Installing tools..."
     echo ""
 
     echo `wget http://mirrors.kernel.org/ubuntu/pool/main/d/device-tree-compiler/device-tree-compiler_1.4.7-1_amd64.deb`
@@ -30,24 +26,24 @@ function install_tools {
 
     echo `pip3 install --user cmake`
 
-    echo "${GREEN}Tools installed.${NC}"
+    echo "Tools installed."
     echo ""
 }
 
 function install_toolchain {
-    echo "${GREEN}Installing GNU Embedded Toolchain for Arm...${NC}"
+    echo "Installing GNU Embedded Toolchain for Arm..."
     echo ""
 
     echo `wget https://launchpad.net/gcc-arm-embedded/4.9/4.9-2015-q3-update/+download/gcc-arm-none-eabi-4_9-2015q3-20150921-linux.tar.bz2`
     echo `tar -xvf gcc-arm-none-eabi-4_9-2015q3-20150921-linux.tar.bz2`
-    # echo `rm -rf gcc-arm-none-eabi-4_9-2015q3-20150921-linux.tar.bz2`
+    echo `rm -rf gcc-arm-none-eabi-4_9-2015q3-20150921-linux.tar.bz2`
 
-    echo "${GREEN}GNU Embedded Toolchain for Arm installed.${NC}"
+    echo "GNU Embedded Toolchain for Arm installed."
     echo ""
 }
 
 function install_nrf_cli {
-    echo "${GREEN}Installing nRF-Command-Line-Tools...${NC}"
+    echo "Installing nRF-Command-Line-Tools..."
     echo ""
 
     echo `wget https://nordicsemi.com/-/media/Software-and-other-downloads/Desktop-software/nRF-command-line-tools/sw/Versions-10-x-x/nRFCommandLineTools1050Linuxamd64tar.gz`
@@ -60,12 +56,12 @@ function install_nrf_cli {
     echo `dpkg -i nRF-Command-Line-Tools_10_5_0_Linux-amd64.deb`
     echo `rm -rf nRF-Command-Line-Tools_10_5_0_Linux-amd64.deb`
 
-    echo "${GREEN}nRF-Command-Line-Tools installed.${NC}"
+    echo "nRF-Command-Line-Tools installed."
     echo ""
 }
 
 function install_segger {
-    echo "${GREEN}Installing Segger J-Link Software...${NC}"
+    echo "Installing Segger J-Link Software..."
     echo ""
 
     echo `tar -xzf JLink_Linux_V654c_x86_64.tgz`
@@ -74,12 +70,12 @@ function install_segger {
     echo `dpkg -i JLink_Linux_V654c_x86_64.deb`
     echo `rm -rf JLink_Linux_V654c_x86_64.deb`
 
-    echo "${GREEN}Segger J-Link Software installed.${NC}"
+    echo "Segger J-Link Software installed."
     echo ""
 }
 
 function install_nrf5_sdk {
-    echo "${GREEN}Installing nRF Connect SDK...${NC}"
+    echo "Installing nRF Connect SDK..."
     echo ""
 
     echo `mkdir -p /ncs`
@@ -91,29 +87,29 @@ function install_nrf5_sdk {
     echo `west init -m https://github.com/NordicPlayground/fw-nrfconnect-nrf`
     echo `west update`
 
-    echo "${GREEN}nRF Connect SDK installed.${NC}"
+    echo "nRF Connect SDK installed."
     echo ""
 }
 
 function install_python_dependencies {
-    echo "${GREEN}Installing additional Python dependencies...${NC}"
+    echo "Installing additional Python dependencies..."
     echo ""
     
     echo `pip3 install --user -r zephyr/scripts/requirements.txt`
     echo `pip3 install --user -r nrf/scripts/requirements.txt`
     echo `pip3 install --user -r mcuboot/scripts/requirements.txt`
 
-    echo "${GREEN}Additional Python dependencies installed.${NC}"
+    echo "Additional Python dependencies installed."
     echo "" 
 }
 
 function setup_build_environments {
-    echo "${GREEN}Setting up the build environments...${NC}"
+    echo "Setting up the build environments..."
     echo ""
 
     echo `source zephyr/zephyr-env.sh`
 
-    echo "${GREEN}Build environments set up.${NC}"
+    echo "Build environments set up."
     echo ""
 }
 
