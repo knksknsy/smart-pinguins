@@ -27,7 +27,7 @@
 #include <vector>
 #include <Node.h>
 #include <Utility.h>
-#include <Math.h>
+#include <math.h>
 #include <GlobalState.h>
 
 #include <stdbool.h>
