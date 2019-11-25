@@ -1,20 +1,11 @@
 package de.hdm.smart_penguins.utils
 
-import android.content.res.Resources
-import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.Color
-import android.view.View
-import java.io.*
+import de.hdm.smart_penguins.data.Constants
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.*
-import java.util.zip.GZIPInputStream
-import kotlin.experimental.and
 
 object Util {
-
-
 
     fun getInt(data: ByteArray, byteIndex: Int): Long {
         return toUnsignedInt(Arrays.copyOfRange(data, byteIndex, byteIndex + 4))
@@ -71,4 +62,12 @@ object Util {
         return UUID(high, low)
     }
 
+    fun getTypeForInt(typeNumber: Short): String {
+        when (typeNumber) {
+            Constants.RUUVI_TAG -> return Constants.RUUVI_TAG_STRING
+            Constants.ARCONNA -> return Constants.ARCONNA_STRING
+            Constants.DEV_BOARD -> return Constants.DEV_BOARD_STRING
+            else -> return Constants.UNKOWN_BOARD
+        }
+    }
 }

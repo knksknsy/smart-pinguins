@@ -1,6 +1,5 @@
 package de.hdm.smart_penguins.ui
 
-import android.Manifest
 import android.app.AlertDialog
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
@@ -8,17 +7,17 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
 import androidx.annotation.Nullable
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
 import de.hdm.smart_penguins.R
 import de.hdm.smart_penguins.SmartApplication
+import de.hdm.smart_penguins.component.BleNodesLiveData
 import de.hdm.smart_penguins.data.Constants
-import de.hdm.smart_penguins.data.callbacks.UpdateCallback
 import de.hdm.smart_penguins.data.manager.ConnectionManager
+import de.hdm.smart_penguins.utils.PermissionDependentTask
+import de.hdm.smart_penguins.utils.PermissionsHandler
 import java.io.File
 import javax.inject.Inject
 
@@ -27,9 +26,12 @@ open class BaseActivity : AppCompatActivity() {
     @Inject
     internal lateinit var connectionManager: ConnectionManager
 
+    @Inject
+    internal lateinit var nodesLiveData: BleNodesLiveData
+
+
     private var isBluetoothDialogShown: Boolean = false
     private var mBroadCastReceiver: BroadcastReceiver? = null
-    private var mUpdateCallback: UpdateCallback? = null
     private var isShown: Boolean = false
 
     private val bleCallback: BroadcastReceiver
@@ -46,7 +48,8 @@ open class BaseActivity : AppCompatActivity() {
                             )
                             when (state) {
                                 BluetoothAdapter.STATE_OFF, BluetoothAdapter.STATE_TURNING_OFF -> if (isShown) showBLuetoothActivationDialog()
-                                BluetoothAdapter.STATE_ON -> if (mUpdateCallback != null) mUpdateCallback!!.onUpdate()
+                                BluetoothAdapter.STATE_ON -> {
+                                }
                                 BluetoothAdapter.STATE_TURNING_ON -> {
                                 }
                             }
@@ -57,24 +60,6 @@ open class BaseActivity : AppCompatActivity() {
             return mBroadCastReceiver as BroadcastReceiver
         }
 
-    protected val isPermissionGranted: Boolean
-        get() {
-            val permissions = arrayOf(
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_COARSE_LOCATION,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                Manifest.permission.READ_EXTERNAL_STORAGE,
-                Manifest.permission.BLUETOOTH,
-                Manifest.permission.INTERNET,
-                Manifest.permission.CAMERA,
-                Manifest.permission.BLUETOOTH_ADMIN
-            )
-            if (!checkPermissions(permissions)) {
-                showPermissionDialog(permissions, Constants.PERMISSION_REQUEST_CODE)
-                return false
-            }
-            return true
-        }
 
     val isBluetoothEnabled: Boolean
         get() =
@@ -89,7 +74,7 @@ open class BaseActivity : AppCompatActivity() {
     }
 
     private fun initInjection() {
-        if(getSmartApplication().activityComponent == null){
+        if (getSmartApplication().activityComponent == null) {
             getSmartApplication().createActivityComponent()
         }
         getSmartApplication().activityComponent?.inject(this);
@@ -111,33 +96,18 @@ open class BaseActivity : AppCompatActivity() {
     }
 
 
-
-    protected fun checkPermissions(permissions: Array<String>): Boolean {
-        for (permission in permissions) {
-            if (!checkPermission(permission)) {
-                return false
-            }
-        }
-        return true
+    fun executeTaskOnPermissionGranted(task: PermissionDependentTask) {
+        PermissionsHandler.executeTaskOnPermissionGranted(this, task)
     }
 
-    private fun checkPermission(permission: String): Boolean {
-        return this.checkSelfPermission(
-            permission
-        ) === PackageManager.PERMISSION_GRANTED
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<String>,
+        grantResults: IntArray
+    ) {
+        PermissionsHandler.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }
 
-    protected fun showPermissionDialog(permissions: Array<String>, requestCode: Int) {
-        val builder = AlertDialog.Builder(this, R.style.AppTheme)
-        val context = this
-        builder.setTitle("Berechtigungen")
-            .setMessage("Damit die App funktioniert, brauchen wir Rechte!")
-            .setPositiveButton(android.R.string.ok) { dialog, which ->
-                ActivityCompat.requestPermissions(context, permissions, requestCode)
-                dialog.cancel()
-            }
-            .show()
-    }
 
     protected fun importProfileWithCamera() {
         startActivity(
@@ -187,19 +157,17 @@ open class BaseActivity : AppCompatActivity() {
     private fun setBluetooth(enabled: Boolean) {
         val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         val bluetoothAdapter: BluetoothAdapter
-        if (bluetoothManager != null) {
-            bluetoothAdapter = bluetoothManager.adapter
-            if (enabled) {
-                bluetoothAdapter.enable()
-            } else {
-                bluetoothAdapter.disable()
-            }
+        bluetoothAdapter = bluetoothManager.adapter
+        if (enabled) {
+            bluetoothAdapter.enable()
+        } else {
+            bluetoothAdapter.disable()
         }
     }
 
     fun initBLEScanning() {
         if (isBluetoothEnabled) {
-            connectionManager!!.initBLEScanner()
+            connectionManager.initBLEScanner()
         } else {
             showBLuetoothActivationDialog()
         }
@@ -208,7 +176,7 @@ open class BaseActivity : AppCompatActivity() {
     fun stopBLEScanning() {
         Log.e(TAG, "BLE Scanning stopped")
         if (isBluetoothEnabled) {
-            connectionManager!!.stopBLEScanner()
+            connectionManager.stopBLEScanner()
         } else {
             showBLuetoothActivationDialog()
         }
@@ -217,7 +185,8 @@ open class BaseActivity : AppCompatActivity() {
     companion object {
         private val TAG = "BASE_ACTIVITY"
     }
-    fun getSmartApplication() : SmartApplication{
+
+    fun getSmartApplication(): SmartApplication {
         return application as SmartApplication
     }
 }

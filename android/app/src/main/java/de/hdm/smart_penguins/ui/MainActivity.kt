@@ -1,13 +1,15 @@
 package de.hdm.smart_penguins.ui
 
+import android.annotation.SuppressLint
 import android.os.Bundle
-import com.google.android.material.bottomnavigation.BottomNavigationView
-import androidx.appcompat.app.AppCompatActivity
+import android.widget.Toast
 import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import de.hdm.smart_penguins.R
+import de.hdm.smart_penguins.utils.PermissionDependentTask
 
 class MainActivity : BaseActivity() {
 
@@ -17,8 +19,6 @@ class MainActivity : BaseActivity() {
         val navView: BottomNavigationView = findViewById(R.id.nav_view)
 
         val navController = findNavController(R.id.nav_host_fragment)
-        // Passing each menu ID as a set of Ids because each
-        // menu should be considered as top level destinations.
         val appBarConfiguration = AppBarConfiguration(
             setOf(
                 R.id.navigation_home,
@@ -32,8 +32,57 @@ class MainActivity : BaseActivity() {
 
     override fun onResume() {
         super.onResume()
-        if (isPermissionGranted) {
-            connectionManager.initBLEScanner()
-        }
+        startBLEScanning();
+    }
+
+    override fun onPause() {
+        super.onPause()
+        stopBLEScanning()
+    }
+
+    private fun startBLEScanning() {
+        executeTaskOnPermissionGranted(
+            object : PermissionDependentTask {
+                override fun getRequiredPermission() =
+                    android.Manifest.permission.ACCESS_FINE_LOCATION
+
+                override fun onPermissionGranted() {
+                    checkForBlePermission()
+                }
+
+                @SuppressLint("WrongConstant")
+                override fun onPermissionRevoked() {
+                    Toast
+                        .makeText(
+                            this@MainActivity,
+                            "Cannot scan without Permissions",
+                            Toast.LENGTH_LONG
+                        )
+                        .show();
+                }
+            })
+    }
+
+    private fun checkForBlePermission() {
+        executeTaskOnPermissionGranted(
+            object : PermissionDependentTask {
+                override fun getRequiredPermission() =
+                    android.Manifest.permission.BLUETOOTH
+
+                override fun onPermissionGranted() {
+                    initBLEScanning()
+                }
+
+                @SuppressLint("WrongConstant")
+                override fun onPermissionRevoked() {
+                    Toast
+                        .makeText(
+                            this@MainActivity,
+                            "Cannot scan without Permissions",
+                            Toast.LENGTH_LONG
+                        )
+                        .show();
+                }
+            })
     }
 }

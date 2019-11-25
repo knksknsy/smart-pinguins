@@ -1,13 +1,14 @@
 package de.hdm.smart_penguins.component
 
-import android.content.Context
 import androidx.lifecycle.MutableLiveData
 import dagger.Module
 import dagger.Provides
 import dagger.Subcomponent
+import de.hdm.smart_penguins.SmartApplication
 import de.hdm.smart_penguins.data.manager.ConnectionManager
+import de.hdm.smart_penguins.data.model.NodeList
 import de.hdm.smart_penguins.ui.BaseActivity
-import org.w3c.dom.NodeList
+import de.hdm.smart_penguins.ui.home.HomeFragment
 import javax.inject.Scope
 
 @Scope
@@ -15,10 +16,17 @@ import javax.inject.Scope
 annotation class ActivityScope
 
 @ActivityScope
-@Subcomponent(modules = arrayOf(ConnectionModule::class,
-    LiveDataModule::class))
+@Subcomponent(
+    modules = arrayOf(
+        ConnectionModule::class,
+        LiveDataModule::class
+    )
+)
 interface ActivityComponent {
     fun inject(activity: BaseActivity)
+    fun inject(fragment: HomeFragment)
+    fun inject(manager: ConnectionManager)
+
 }
 
 typealias BleNodesLiveData = MutableLiveData<NodeList>
@@ -34,8 +42,8 @@ class LiveDataModule {
 class ConnectionModule {
     @ActivityScope
     @Provides
-    fun providesConnectionManager(context: Context): ConnectionManager {
-        return ConnectionManager(context)
+    fun providesConnectionManager(application: SmartApplication): ConnectionManager {
+        return ConnectionManager(application)
     }
 }
 

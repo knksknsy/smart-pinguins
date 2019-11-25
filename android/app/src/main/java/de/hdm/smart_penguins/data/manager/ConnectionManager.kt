@@ -1,9 +1,10 @@
 package de.hdm.smart_penguins.data.manager
 
-import android.content.Context
 import android.os.Handler
 import android.os.ParcelUuid
 import android.util.Log
+import de.hdm.smart_penguins.SmartApplication
+import de.hdm.smart_penguins.component.BleNodesLiveData
 import de.hdm.smart_penguins.data.Constants
 import de.hdm.smart_penguins.data.Constants.BLE_SCAN_INTERVAL
 import de.hdm.smart_penguins.data.Constants.DELAY_BLE_SCANNER
@@ -17,8 +18,13 @@ import java.util.*
 import javax.inject.Inject
 import javax.inject.Singleton
 
+
 @Singleton
-class  ConnectionManager @Inject constructor(context: Context) {
+class  ConnectionManager @Inject constructor(
+    var application: SmartApplication
+) {
+    @Inject
+    lateinit var nodesLiveData: BleNodesLiveData
     private var listener: ((BleNode) -> Unit)? = null
     private var mScanner: BluetoothLeScannerCompat? = null
     val nodeList = NodeList()
@@ -58,27 +64,21 @@ class  ConnectionManager @Inject constructor(context: Context) {
                 ))
                 if (isMeshBroadCastMessage) {
                     val node = BleNode(scanResult)
-                    if (node.messageMeshAccessBroadcast!!.messageType == Constants.MESSAGE_TYPE_BROADCAST && node.messageMeshAccessBroadcast!!.isConnectable) {
+                    if (node.messageMeshAccessBroadcast!!.messageType == Constants.MESSAGE_TYPE_BROADCAST) {
                         nodeList.addNode(node)
                     }
-                }
-
-                val isJoinMeMessage =
-                    scanResult.scanRecord!!.manufacturerSpecificData != null && scanResult.scanRecord!!.manufacturerSpecificData!!.get(
-                        MANUFACTURER_DATA
-                    ) != null
-
-                if (isJoinMeMessage) {
-                    nodeList.updateNode(scanResult)
                 }
 
             }
         }
         nodeList.sort()
+        if(nodeList.size > 0) Log.e(TAG, nodeList.get(0).messageMeshAccessBroadcast?.deviceNumber.toString())
+        nodesLiveData.value = nodeList
     }
 
 
     fun initBLEScanner() {
+        application.activityComponent?.inject(this)
         if (!isScannerBlocked) {
             doInitBLEScanner()
             setScannerInitiationHandler()

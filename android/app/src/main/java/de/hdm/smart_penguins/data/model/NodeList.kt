@@ -9,14 +9,13 @@ import java.util.*
 
 class NodeList : ArrayList<BleNode>() {
     private val TAG = "NodeList"
-
     fun clearNodes() {
         synchronized(this) {
             val iterator = this.iterator()
             while (iterator.hasNext()) {
                 val node = iterator.next()
                 node.updateRssi()
-                if (node.currentRssi === NODE_RSSI_NOT_IN_RANGE && node.previousRssi === NODE_RSSI_NOT_IN_RANGE) {
+                if (node.currentRssi == NODE_RSSI_NOT_IN_RANGE && node.previousRssi == NODE_RSSI_NOT_IN_RANGE) {
                     node.offlineCounter += 1
                 }
                 if (node.offlineCounter > 2) iterator.remove()
@@ -61,7 +60,7 @@ class NodeList : ArrayList<BleNode>() {
     fun getNode(networkId: Int): BleNode? {
         synchronized(this) {
             for (bleNode in this) {
-                if (bleNode.messageMeshAccessBroadcast!!.networkId === networkId && bleNode.messageMeshAccessBroadcast!!.isConnectable) {
+                if (bleNode.messageMeshAccessBroadcast!!.networkId.toInt() == networkId) {
                     return bleNode
                 }
             }
@@ -72,7 +71,7 @@ class NodeList : ArrayList<BleNode>() {
     fun getNode(networkId: Int, bluetoothDevice: BluetoothDevice): BleNode? {
         synchronized(this) {
             for (bleNode in this) {
-                if (bleNode.messageMeshAccessBroadcast!!.networkId === networkId && TextUtils.equals(
+                if (bleNode.messageMeshAccessBroadcast!!.networkId.toInt() == networkId && TextUtils.equals(
                         bleNode.scanResult!!.device.address,
                         bluetoothDevice.address
                     )

@@ -1,7 +1,5 @@
 package de.hdm.smart_penguins.data
 
-import java.util.*
-
 object Constants {
 
     val VAR_NOT_SET = -1
@@ -16,7 +14,7 @@ object Constants {
     val MODULE_VS_MODULE_ID = 151    // 0x97
     val MESSAGE_TYPE_MODULE_TRIGGER_ACTION: Char = 51.toChar()
     val MESSAGE_TYPE_MODULE_ACTION_RESPONSE: Char = 52.toChar()
-    val MESSAGE_TYPE_BROADCAST = 3
+    val MESSAGE_TYPE_BROADCAST = 25
     val MESSAGE_TYPE_JOINME = 1
 
 
@@ -41,7 +39,7 @@ object Constants {
     val MANUFACTURER_DATA = 589
 
 
-    val OFFSET_MESSAGE_BROADCAST = 11
+    val OFFSET_MESSAGE_BROADCAST = 7
     val OFFSET_MESSAGE_BROADCAST_MODULE = 21
     val OFFSET_MESSAGE_JOINME = 8
     val OFFSET_MESSAGE_BASE = 5
@@ -69,4 +67,26 @@ object Constants {
     val STATE_DISCONNECTING = 6
 
     val NODE_RSSI_NOT_IN_RANGE = -99
+
+    //Board Types
+    val RUUVI_TAG_STRING = "Ruuvi Tag"
+    val RUUVI_TAG: Short = 3
+    val DEV_BOARD_STRING = "Dev Board"
+    val DEV_BOARD: Short = 1
+    val ARCONNA_STRING = "Arconna Board"
+    val ARCONNA: Short = 2
+    val UNKOWN_BOARD = "Unkown Board Type"
+
+    //Empty values
+    val NO_VALUE_CLUSTER_ID: Short = -1
+    val NO_VALUE_RSSI = 0
+    val NO_VALUE_HUMIDITY: Short = -255
+    val NO_VALUE_TEMPERATURE: Short = 0xFF
+    val NO_VALUE_DISTANCE = -1.0f
+    val NO_VALUE_CHANNEL: Short = -1
+    val NO_SENSOR_TEMPERATURE: Short = -128
+    val NO_SENSOR_HUMIDITY: Short = 255
+    val NO_VALUE_SPOT_NUMBER: Short = 0
+    val NO_VALUE_LATLNG = -1.0
+
 }
