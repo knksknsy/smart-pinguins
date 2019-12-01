@@ -1,5 +1,12 @@
 package de.hdm.smart_penguins.data.manager
 
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.le.AdvertiseData
+import android.bluetooth.le.AdvertisingSet
+import android.bluetooth.le.AdvertisingSetCallback
+import android.bluetooth.le.AdvertisingSetParameters
+import android.os.Build
 import android.os.Handler
 import android.os.ParcelUuid
 import android.util.Log
@@ -23,6 +30,7 @@ import javax.inject.Singleton
 class  ConnectionManager @Inject constructor(
     var application: SmartApplication
 ) {
+    private  lateinit var currentAdvertisingSet: AdvertisingSet
     @Inject
     lateinit var nodesLiveData: BleNodesLiveData
     private var listener: ((BleNode) -> Unit)? = null
@@ -136,29 +144,81 @@ class  ConnectionManager @Inject constructor(
             mScanner = BluetoothLeScannerCompat.getScanner()
             mScanner!!.stopScan(scanCallback)
         } catch (e: IllegalStateException) {
-            Log.e(TAG, e.message)
+            Log.e(TAG, e.message.toString())
         }
 
         mScanner = null
     }
 
+    fun broadCastMessage(){
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 
-    fun registerNodeListener(networkId: Int, listener: (BleNode) -> Unit) {
-        this.mNetworkFilter = networkId
-        this.listener = listener
-    }
+                val adapter = BluetoothAdapter.getDefaultAdapter()
+                val advertiser = BluetoothAdapter.getDefaultAdapter().getBluetoothLeAdvertiser()
+                // Check if all features are supported
+                if (!adapter.isLe2MPhySupported()) {
+                    Log.e(TAG, "2M PHY not supported!")
+                    return
+                }
+                if (!adapter.isLeExtendedAdvertisingSupported()) {
+                    Log.e(TAG, "LE Extended Advertising not supported!")
+                    return
+                }
+                val maxDataLength = adapter.getLeMaximumAdvertisingDataLength()
+                val parameters = (AdvertisingSetParameters.Builder())
+                    .setLegacyMode(false)
+                    .setInterval(AdvertisingSetParameters.INTERVAL_HIGH)
+                    .setTxPowerLevel(AdvertisingSetParameters.TX_POWER_MEDIUM)
+                    .setPrimaryPhy(BluetoothDevice.PHY_LE_2M)
+                    .setSecondaryPhy(BluetoothDevice.PHY_LE_2M)
+                val data = (AdvertiseData.Builder()).addServiceData(
+                    ParcelUuid(UUID.randomUUID()),
+                    "Test bytes".toByteArray()
+                )
+                val callback = object : AdvertisingSetCallback() {
+                    override fun onAdvertisingSetStarted(
+                        advertisingSet: AdvertisingSet,
+                        txPower: Int,
+                        status: Int
+                    ) {
+                        Log.i(
+                            TAG,
+                            ("onAdvertisingSetStarted(): txPower:" + txPower + " , status: "
+                                    + status)
+                        )
+                        currentAdvertisingSet = advertisingSet
+                    }
 
-    fun unregisterNodeListener() {
-        this.mNetworkFilter = NETWORK_ID_NOT_SET
-        this.listener = null
-        if (mScanner != null) {
-            try {
-                mScanner!!.flushPendingScanResults(scanCallback)
-            } catch (e: IllegalArgumentException) {
-                e.printStackTrace()
+                    override fun onAdvertisingSetStopped(advertisingSet: AdvertisingSet) {
+                        Log.i(TAG, "onAdvertisingSetStopped():")
+                    }
+                }
+                advertiser.startAdvertisingSet(parameters.build(), data, null, null, null, callback)
+                // After the set starts, you can modify the data and parameters of currentAdvertisingSet.
+                currentAdvertisingSet.setAdvertisingData(
+                    (AdvertiseData.Builder()).addServiceData(
+                        ParcelUuid(UUID.randomUUID()),
+                        "Test".toByteArray()))
+                // Wait for onAdvertisingDataSet callback...
+                // Can also stop and restart the advertising
+                currentAdvertisingSet.enableAdvertising(false, 0, 0)
+                // Wait for onAdvertisingEnabled callback...
+                currentAdvertisingSet.enableAdvertising(true, 0, 0)
+                // Wait for onAdvertisingEnabled callback...
+                // Or modify the parameters - i.e. lower the tx power
+                currentAdvertisingSet.enableAdvertising(false, 0, 0)
+                // Wait for onAdvertisingEnabled callback...
+                currentAdvertisingSet.setAdvertisingParameters(
+                    parameters.setTxPowerLevel(
+                        AdvertisingSetParameters.TX_POWER_LOW
+                    ).build()
+                )
+                // Wait for onAdvertisingParametersUpdated callback...
+                currentAdvertisingSet.enableAdvertising(true, 0, 0)
+                // Wait for onAdvertisingEnabled callback...
+                // When done with the advertising:
+                advertiser.stopAdvertisingSet(callback)
             }
-
-        }
     }
 
 
