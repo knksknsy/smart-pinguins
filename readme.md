@@ -11,6 +11,7 @@
     * [1.4 Bauen des Docker-Images](#build_docker)
     * [1.5 Ausführen des Docker-Containers](#cont_docker)
 - [2. Bauen und Flashen](#build)
+- [3. Debugging durch JLink](#debugging)
 <!-- toc -->
 
 <a name="sw_env"></a>
@@ -32,7 +33,6 @@ Folge den Anweisungen der folgenden Kapitel, um das Docker-Image ```docker-nrf5`
 
 1. Brew installieren: https://brew.sh
 2. Docker Engine und Docker-Machine installieren:<br/>```$ brew install docker```
-3. Cask zum Brew Tap hinzufügen:<br/>```$ brew tap caskroom/cask```
 3. Docker Client installieren:<br/>```$ brew cask install docker```
 4. Optional: Falls Virtualbox nach dem 2. Schritt fehlt. Virtualbox installieren mit:<br/>```$ brew cask install virtualbox```
 
@@ -95,6 +95,8 @@ Führe folgende Befehle aus, um einen Container vom ```docker-nrf5``` Image zu i
 1. Wechsle in den ```docker``` Ordner im Projektverzeichnis: ```$ cd <project_path>/docker```
 2. Starte den Container mit dem Script: ```$ ./docker.sh```. Dieser Script startet einen Container für das ```docker-nrf5``` Image. Der Script mountet zudem das Projektverzeichnis in das ```/smart-pinguins``` Verzeichnis des Containers. Zudem exportiert er den Hosts ```/dev/ttyUSB0``` Port an den Port ```/dev/ttyUSB0``` des Containers.
 
+Kann der Serielle Port nicht an den Container freigegeben werden, dann führe folgende Befehle im Kapitel [1.2 Freigeben des seriellen Ports vom Hosts zum Docker-Container (MacOS)](#serial_port) aus.
+
 <a name="build"></a>
 ## 2. Bauen und Flashen
 
@@ -102,3 +104,14 @@ Führe folgende Befehle aus, um einen Container vom ```docker-nrf5``` Image zu i
 2. Der Hex-Output ```FruityMesh.hex``` befindet sich im folgenden Pfad: ```smart-pinguins/fruitymesh/_build```.
 3. Um das Development Kit zu Flashen führe folgenden Befehl im Pfad ```smart-pinguins/fruitymesh/_build``` aus:
 ```nrfjprog --program FruityMesh.hex  --sectorerase -r```
+
+<a name="debugging"></a>
+## 3. Debugging durch JLink
+
+1. Führe folgenden Befehl aus, nachdem der ```docker.sh``` Script ausgeführt wurde:<br/>```$ JLinkRTTClient```
+2. Öffne eine neue zusätzliche Verbindung zum ```nrf5``` Docker Container (im neuen Terminal Fenster):<br/>```$ docker exec -ti nrf5 /bin/bash```
+3. Führe folgenden Befehl aus:<br/>```$ JLinkExe  -AutoConnect 1 -device NRF52832_XXAA -speed 4000 -if SWD```
+
+Nun werden die Logs im ersten Terminal Fenster ausgegeben.
+
+

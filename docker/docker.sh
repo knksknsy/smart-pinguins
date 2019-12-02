@@ -44,7 +44,7 @@ if [[ $(docker-machine ls | grep -c "default.*virtualbox.*Running") -eq 0 ]]; th
 	start_machine
 fi
 
-# check if docker-nrf5 image is created
+# Check if docker-nrf5 image is created
 if [[ $(docker images | grep -c "docker-nrf5") -eq 0 ]]; then
     build_image
 fi
@@ -60,4 +60,7 @@ fi
 eval "$(docker-machine env default)"
 
 docker run -ti --rm --name nrf5 --privileged -v /dev/ttyUSB0:/dev/ttyUSB0 --mount type=bind,source=${FULL_PATH},target=/smart-pinguins docker-nrf5 /bin/bash
-# docker run -ti --rm --name nrf5 --device /dev/ttyUSB0:/dev/ttyUSB0 -v ${FULL_PATH}:/smart-pinguins docker-nrf5 /bin/bash
+#docker run -ti --rm --name nrf5 --device /dev/ttyUSB0:/dev/ttyUSB0 -v ${FULL_PATH}:/smart-pinguins docker-nrf5 /bin/bash
+
+# Open new connection to container
+#docker exec -ti nrf5 /bin/bash
