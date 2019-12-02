@@ -65,7 +65,7 @@ AlarmModule::AlarmModule() :
 	//Start Broadcasting the informations
 	UpdateGpioState();
 	RequestAlarmUpdatePacket();
-	BroadcastAlarmAdvertisingPacket();
+	BroadcastPenguinAdvertisingPacket();
 	logt("NODE", "Started MIRO");
 
 	ResetToDefaultConfiguration();
@@ -147,8 +147,8 @@ void AlarmModule::BroadcastAlarmUpdatePacket() {
 //	AlarmModule::isAlarmTriggered = true;
 //}
 
-void AlarmModule::BroadcastAlarmAdvertisingPacket() {
-	logt("ALARM_SYSTEM", "Starting Broadcasting");
+void AlarmModule::BroadcastPenguinAdvertisingPacket() {
+	logt("ALARM_SYSTEM", "Starting Broadcasting Penguin Packet");
 
 	currentAdvChannel = Utility::GetRandomInteger() % 3;
 
@@ -188,7 +188,7 @@ void AlarmModule::BroadcastAlarmAdvertisingPacket() {
 	serviceUuidList->type = BLE_GAP_AD_TYPE_16BIT_SERVICE_UUID_COMPLETE;
 	serviceUuidList->uuid = SERVICE_DATA_SERVICE_UUID16;
 
-	advPacketAlarmData* alarmData = (advPacketAlarmData*) (bufferPointer
+	AdvPacketPenguinData* alarmData = (AdvPacketPenguinData*) (bufferPointer
 			+ SIZEOF_ADV_STRUCTURE_FLAGS + SIZEOF_ADV_STRUCTURE_UUID16);
 	alarmData->len = SIZEOF_ADV_STRUCTURE_ALARM_SERVICE_DATA - 1;
 	alarmData->type = SERVICE_TYPE_ALARM_UPDATE;
@@ -196,26 +196,14 @@ void AlarmModule::BroadcastAlarmAdvertisingPacket() {
 	alarmData->uuid = SERVICE_DATA_SERVICE_UUID16;
 	alarmData->messageType = SERVICE_DATA_MESSAGE_TYPE_ALARM;
 	alarmData->clusterSize = GS->node.clusterSize;
-	alarmData->clusterId = GS->node.clusterId;
 	alarmData->networkId = GS->node.configuration.networkId;
-	/*alarmData->active =
-			isActivated ?
-					AlarmModuleActiveStates::ACTIVE :
-					AlarmModuleActiveStates::INACTIVE;
-*/
-	alarmData->active = AlarmModuleActiveStates::ACTIVE;
-		alarmData->temperature = 25;
-		alarmData->humidity = HUMIDITY_NO_VALUE;
-		alarmData->boardType = BoardType::DEV_BOARD;
-
 
 	alarmData->advertisingChannel = currentAdvChannel + 1;
 
 	if (index >= (u8) meshDeviceIdArray.size()) {
 		index = 0;
 	}
-	alarmData->index = index;
-	alarmData->spotCount = meshDeviceIdArray.size();
+
 	if (meshDeviceIdArray.size() == 0) {
 		alarmData->meshDataType = 0;
 		alarmData->meshDeviceId = 0;
@@ -369,7 +357,7 @@ void AlarmModule::MeshMessageReceivedHandler(BaseConnection* connection,
 				}
 			}
 		}
-		BroadcastAlarmAdvertisingPacket();
+		BroadcastPenguinAdvertisingPacket();
 	}
 }
 ;
@@ -380,7 +368,7 @@ void AlarmModule::TimerEventHandler(u16 passedTimeDs, u32 appTimerDs) {
 
 	if (SHOULD_IV_TRIGGER(appTimerDs, passedTimeDs,
 			ALARM_MODULE_BROADCAST_TRIGGER_TIME)) {
-		BroadcastAlarmAdvertisingPacket();
+		BroadcastPenguinAdvertisingPacket();
 	}
 
 	if (SHOULD_IV_TRIGGER(appTimerDs, passedTimeDs,
@@ -417,4 +405,108 @@ void AlarmModule::GpioInit() {
 	nrf_gpio_pin_set(PIN_OUT);
 	nrf_gpio_cfg_input(PIN_IN, NRF_GPIO_PIN_NOPULL);
 }
+
+void AlarmModule::GapAdvertisementReportEventHandler(const GapAdvertisementReportEvent& advertisementReportEvent)
+{
+	if (!configuration.moduleActive) return;
+
+#if IS_INACTIVE(GW_SAVE_SPACE)
+	HandleAssetV2Packets(advertisementReportEvent);
+#endif
+}
+
+#define _______________________ASSET_V2______________________
+
+#if IS_INACTIVE(GW_SAVE_SPACE)
+//This function checks whether we received an assetV2 packet
+void AlarmModule::HandleAssetV2Packets(const GapAdvertisementReportEvent& advertisementReportEvent)
+{
+	const advPacketServiceAndDataHeader* packet = (const advPacketServiceAndDataHeader*)advertisementReportEvent.getData();
+	const advPacketAssetServiceData* assetPacket = (const advPacketAssetServiceData*)&packet->data;
+
+	//Check if the advertising packet is an asset packet
+	if (
+			advertisementReportEvent.getDataLength() >= SIZEOF_ADV_STRUCTURE_ASSET_SERVICE_DATA
+			&& packet->flags.len == SIZEOF_ADV_STRUCTURE_FLAGS-1
+			&& packet->uuid.len == SIZEOF_ADV_STRUCTURE_UUID16-1
+			&& packet->data.type == BLE_GAP_AD_TYPE_SERVICE_DATA
+			&& packet->data.uuid == SERVICE_DATA_SERVICE_UUID16
+			&& packet->data.messageType == SERVICE_DATA_MESSAGE_TYPE_ASSET
+	){
+		char serial[6];
+		Utility::GenerateBeaconSerialForIndex(assetPacket->serialNumberIndex, serial);
+		logt("SCANMOD", "RX ASSETV2 ADV: serial %s, pressure %u, speed %u, temp %u, humid %u, cn %u, rssi %d",
+				serial,
+				assetPacket->pressure,
+				assetPacket->speed,
+				assetPacket->temperature,
+				assetPacket->humidity,
+				assetPacket->advertisingChannel,
+				advertisementReportEvent.getRssi());
+
+
+		//Adds the asset packet to our buffer
+		addTrackedAsset(assetPacket, advertisementReportEvent.getRssi());
+
+	}
+}
+
+/**
+ * Finds a free slot in our buffer of asset packets and adds the packet
+ */
+bool AlarmModule::addTrackedAsset(const advPacketAssetServiceData* packet, i8 rssi){
+	if(packet->serialNumberIndex == 0) return false;
+
+	rssi = -rssi; //Make rssi positive
+
+	if(rssi < 10 || rssi > 90) return false; //filter out wrong rssis
+
+	scannedAssetTrackingPacket* slot = nullptr;
+
+	//Look for an old entry of this asset or a free space
+	//Because we fill this buffer from the beginning, we can use the first slot that is empty
+	for(int i = 0; i<ASSET_PACKET_BUFFER_SIZE; i++){
+		if(assetPackets[i].serialNumberIndex == packet->serialNumberIndex || assetPackets[i].serialNumberIndex == 0){
+			slot = &assetPackets[i];
+			break;
+		}
+	}
+
+	//If a slot was found, add the packet
+	if(slot != nullptr){
+		u16 slotNum = ((u32)slot - (u32)assetPackets.getRaw()) / sizeof(scannedAssetTrackingPacket);
+		logt("SCANMOD", "Tracked packet %u in slot %d", packet->serialNumberIndex, slotNum);
+
+		//Clean up first, if we overwrite another assetId
+		if(slot->serialNumberIndex != packet->serialNumberIndex){
+			slot->serialNumberIndex = packet->serialNumberIndex;
+			slot->count = 0;
+			slot->rssi37 = slot->rssi38 = slot->rssi39 = UINT8_MAX;
+		}
+		//If the count is at its max, we reset the rssi
+		if(slot->count == UINT8_MAX){
+			slot->count = 0;
+			slot->rssi37 = slot->rssi38 = slot->rssi39 = UINT8_MAX;
+		}
+
+		slot->serialNumberIndex = packet->serialNumberIndex;
+		slot->count++;
+		//Channel 0 means that we have no channel data, add it to all rssi channels
+		if(packet->advertisingChannel == 0 && rssi < slot->rssi37){
+			slot->rssi37 = (u16) rssi;
+			slot->rssi38 = (u16) rssi;
+			slot->rssi39 = (u16) rssi;
+		}
+		if(packet->advertisingChannel == 1 && rssi < slot->rssi37) slot->rssi37 = (u16) rssi;
+		if(packet->advertisingChannel == 2 && rssi < slot->rssi38) slot->rssi38 = (u16) rssi;
+		if(packet->advertisingChannel == 3 && rssi < slot->rssi39) slot->rssi39 = (u16) rssi;
+		slot->direction = packet->direction;
+		slot->pressure = packet->pressure;
+		slot->speed = packet->speed;
+
+		return true;
+	}
+	return false;
+}
+#endif
 

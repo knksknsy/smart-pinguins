@@ -44,6 +44,7 @@ typedef struct {
 #define SERVICE_DATA_TYPE_WINDOW_VERSION_ONE 78
 #define ALARM_MODULE_BROADCAST_TRIGGER_TIME 300
 #define ALARM_MODULE_SENSOR_SCAN_TRIGGER_TIME 100
+#define ASSET_PACKET_BUFFER_SIZE 30
 
 
 #define TEMPERATURE_NO_VALUE  -128
@@ -53,37 +54,49 @@ typedef struct {
 #define SIZEOF_ADV_STRUCTURE_ALARM_SERVICE_DATA 22 //ToDo
 typedef struct {
 	//6 byte header
-	u8 len;
-	u8 type;
-	u16 uuid;
-	u16 messageType;
-	//1 byte capabilities
-	u8 advertisingChannel :2;// 0 = not available, 1=37, 2=38, 3=39
-
-	//5 byte additional beacon information
-	u8 nodeId;
-	i8 txPower;
-	u8 boardType;
-	i8 temperature;
-	u8 humidity;
-
-	//1 Byte active spots
-	u8 active;
-
-	//3 byte cluster information
-	u8 clusterSize;
-	u8 clusterId;
-	u8 networkId;
-
-	//6 Byte Spot Information
+    u8 len;  
+    u8 type; 
+    u16 uuid;
+    u16 messageType;
+    //1 byte capabilities
+    u8 advertisingChannel :2;// 0 = not available, 1=37, 2=38, 3=39
+ 
+    //3 byte additional beacon information
+    u8 nodeId;
+    i8 txPower;
+    u8 boardType; //Nur für Debugging
+ 
+    //3 byte cluster information
+    u8 currentClusterSize;
+    u8 clusterSize;
+    u8 networkId; //Nur für Debugging
+ 
+    //6 Byte Penguin Information
 	u8 meshDataType;
-	u8 spotCount;
-	u8 index;
 	u8 meshDeviceId;
-	i8 meshDataOne;
-	u8 meshDataTwo;
+    u8 beaconDataOne;
+    u8 beaconDataTwo;
+    i8 meshDataOne;
+    u8 meshDataTwo;
+}AdvPacketPenguinData;
 
-}advPacketAlarmData;
+typedef struct {
+    //6 byte header
+    u8 len;  
+    u8 type; 
+    u16 uuid;
+    u16 messageType;
+    //1 byte capabilities
+    u8 advertisingChannel :2;// 0 = not available, 1=37, 2=38, 3=39
+ 
+    //1 byte additional beacon information
+    i8 txPower;
+ 
+    //3 byte car information (Können/sollten auch nur als Bits gesetzt werden)
+    u8 isDrivingDirection;
+    u8 isBroken;
+    u8 isIcy;
+}AdvPacketCarData;
 
 class AlarmModule: public Module {
 private:
@@ -116,6 +129,21 @@ private:
 		RUUVI_TAG = 3
 	};
 
+	//Storage for advertising packets
+	typedef struct
+	{
+		u32 serialNumberIndex;
+		u8 rssi37;
+		u8 rssi38;
+		u8 rssi39;
+		u8 count;
+		u8 speed;
+		u8 direction;
+		u16 pressure;
+	} scannedAssetTrackingPacket;
+
+	SimpleArray<scannedAssetTrackingPacket, ASSET_PACKET_BUFFER_SIZE> assetPackets;
+
 #define SIZEOF_MA_MODULE_DISCONNECT_MESSAGE 7
 	typedef struct
 	{
@@ -131,6 +159,9 @@ private:
 
 	void InitialiseBME280();
 	void UpdateBarometerData();
+
+	void HandleAssetV2Packets(const GapAdvertisementReportEvent& advertisementReportEvent);
+	bool addTrackedAsset(const advPacketAssetServiceData* packet, i8 rssi);
 
 	AlarmModuleConfiguration configuration;
 
@@ -164,7 +195,7 @@ public:
 
 	void ResetToDefaultConfiguration();
 
-	void BroadcastAlarmAdvertisingPacket();
+	void BroadcastPenguinAdvertisingPacket();
 
 	void BroadcastAlarmUpdatePacket();
 
@@ -181,6 +212,8 @@ public:
 	void BlinkGreenLed();
 
 	void UpdateGpioState();
+
+	virtual void GapAdvertisementReportEventHandler(const GapAdvertisementReportEvent& advertisementReportEvent) override;
 };
 
 
