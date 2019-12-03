@@ -1,7 +1,6 @@
 package de.hdm.smart_penguins.data.manager
 
 import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothDevice
 import android.bluetooth.le.AdvertiseData
 import android.bluetooth.le.AdvertisingSet
 import android.bluetooth.le.AdvertisingSetCallback
@@ -18,6 +17,7 @@ import de.hdm.smart_penguins.data.Constants.DELAY_BLE_SCANNER
 import de.hdm.smart_penguins.data.Constants.DELAY_BLE_SCANNRESULT_TIMEOUT
 import de.hdm.smart_penguins.data.Constants.MANUFACTURER_DATA
 import de.hdm.smart_penguins.data.Constants.NETWORK_ID_NOT_SET
+import de.hdm.smart_penguins.data.Constants.SERVICE_UUID
 import de.hdm.smart_penguins.data.model.BleNode
 import de.hdm.smart_penguins.data.model.NodeList
 import no.nordicsemi.android.support.v18.scanner.*
@@ -27,10 +27,10 @@ import javax.inject.Singleton
 
 
 @Singleton
-class  ConnectionManager @Inject constructor(
+class ConnectionManager @Inject constructor(
     var application: SmartApplication
 ) {
-    private  lateinit var currentAdvertisingSet: AdvertisingSet
+    private lateinit var currentAdvertisingSet: AdvertisingSet
     @Inject
     lateinit var nodesLiveData: BleNodesLiveData
     private var listener: ((BleNode) -> Unit)? = null
@@ -80,7 +80,10 @@ class  ConnectionManager @Inject constructor(
             }
         }
         nodeList.sort()
-        if(nodeList.size > 0) Log.e(TAG, nodeList.get(0).messageMeshAccessBroadcast?.deviceNumber.toString())
+        if (nodeList.size > 0) Log.e(
+            TAG,
+            nodeList.get(0).messageMeshAccessBroadcast?.deviceNumber.toString()
+        )
         nodesLiveData.value = nodeList
     }
 
@@ -97,6 +100,7 @@ class  ConnectionManager @Inject constructor(
 
     private fun doInitBLEScanner() {
         try {
+            example1()
             stopBLEScanner()
             val scanSettings = ScanSettings.Builder()
                 .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
@@ -150,77 +154,76 @@ class  ConnectionManager @Inject constructor(
         mScanner = null
     }
 
-    fun broadCastMessage(){
+    fun example1() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val advertiser =
+                BluetoothAdapter.getDefaultAdapter().bluetoothLeAdvertiser
+            val parameters = AdvertisingSetParameters.Builder()
+                .setLegacyMode(true) // True by default, but set here as a reminder.
+                .setConnectable(false)
+                .setInterval(AdvertisingSetParameters.INTERVAL_HIGH)
+                .setTxPowerLevel(AdvertisingSetParameters.TX_POWER_MEDIUM)
+                .build()
 
-                val adapter = BluetoothAdapter.getDefaultAdapter()
-                val advertiser = BluetoothAdapter.getDefaultAdapter().getBluetoothLeAdvertiser()
-                // Check if all features are supported
-                if (!adapter.isLe2MPhySupported()) {
-                    Log.e(TAG, "2M PHY not supported!")
-                    return
-                }
-                if (!adapter.isLeExtendedAdvertisingSupported()) {
-                    Log.e(TAG, "LE Extended Advertising not supported!")
-                    return
-                }
-                val maxDataLength = adapter.getLeMaximumAdvertisingDataLength()
-                val parameters = (AdvertisingSetParameters.Builder())
-                    .setLegacyMode(false)
-                    .setInterval(AdvertisingSetParameters.INTERVAL_HIGH)
-                    .setTxPowerLevel(AdvertisingSetParameters.TX_POWER_MEDIUM)
-                    .setPrimaryPhy(BluetoothDevice.PHY_LE_2M)
-                    .setSecondaryPhy(BluetoothDevice.PHY_LE_2M)
-                val data = (AdvertiseData.Builder()).addServiceData(
-                    ParcelUuid(UUID.randomUUID()),
-                    "Test bytes".toByteArray()
-                )
-                val callback = object : AdvertisingSetCallback() {
-                    override fun onAdvertisingSetStarted(
-                        advertisingSet: AdvertisingSet,
-                        txPower: Int,
-                        status: Int
-                    ) {
-                        Log.i(
-                            TAG,
-                            ("onAdvertisingSetStarted(): txPower:" + txPower + " , status: "
-                                    + status)
-                        )
-                        currentAdvertisingSet = advertisingSet
-                    }
+            val data = AdvertiseData.Builder().addServiceData(
+                   ParcelUuid.fromString(SERVICE_UUID),
+            "You shog".toByteArray()).build();
 
-                    override fun onAdvertisingSetStopped(advertisingSet: AdvertisingSet) {
-                        Log.i(TAG, "onAdvertisingSetStopped():")
-                    }
+            val callback = object  :AdvertisingSetCallback() {
+                override fun onAdvertisingSetStarted(
+                    advertisingSet: AdvertisingSet,
+                    txPower: Int,
+                    status: Int
+                ) {
+                    Log.i(
+                        TAG, "onAdvertisingSetStarted(): txPower:" + txPower + " , status: "
+                                + status
+                    )
+                    currentAdvertisingSet = advertisingSet
                 }
-                advertiser.startAdvertisingSet(parameters.build(), data, null, null, null, callback)
-                // After the set starts, you can modify the data and parameters of currentAdvertisingSet.
-                currentAdvertisingSet.setAdvertisingData(
-                    (AdvertiseData.Builder()).addServiceData(
-                        ParcelUuid(UUID.randomUUID()),
-                        "Test".toByteArray()))
-                // Wait for onAdvertisingDataSet callback...
-                // Can also stop and restart the advertising
-                currentAdvertisingSet.enableAdvertising(false, 0, 0)
-                // Wait for onAdvertisingEnabled callback...
-                currentAdvertisingSet.enableAdvertising(true, 0, 0)
-                // Wait for onAdvertisingEnabled callback...
-                // Or modify the parameters - i.e. lower the tx power
-                currentAdvertisingSet.enableAdvertising(false, 0, 0)
-                // Wait for onAdvertisingEnabled callback...
-                currentAdvertisingSet.setAdvertisingParameters(
-                    parameters.setTxPowerLevel(
-                        AdvertisingSetParameters.TX_POWER_LOW
-                    ).build()
-                )
-                // Wait for onAdvertisingParametersUpdated callback...
-                currentAdvertisingSet.enableAdvertising(true, 0, 0)
-                // Wait for onAdvertisingEnabled callback...
-                // When done with the advertising:
-                advertiser.stopAdvertisingSet(callback)
+
+                override fun onAdvertisingDataSet(
+                    advertisingSet: AdvertisingSet,
+                    status: Int
+                ) {
+                    Log.i(TAG, "onAdvertisingDataSet() :status:$status")
+                }
+
+                override fun onScanResponseDataSet(
+                    advertisingSet: AdvertisingSet,
+                    status: Int
+                ) {
+                    Log.i(TAG, "onScanResponseDataSet(): status:$status")
+                }
+
+                override fun onAdvertisingSetStopped(advertisingSet: AdvertisingSet) {
+                    Log.i(TAG, "onAdvertisingSetStopped():")
+                }
             }
+
+            advertiser.startAdvertisingSet(parameters, data, null,null , null, callback)
+
+           /* // After onAdvertisingSetStarted callback is called, you can modify the
+// advertising data and scan response data:
+            currentAdvertisingSet.setAdvertisingData(
+                AdvertiseData.Builder().setIncludeDeviceName(true).setIncludeTxPowerLevel(
+                    true
+                ).build()
+            )
+            // Wait for onAdvertisingDataSet callback...
+            currentAdvertisingSet.setScanResponseData(
+                AdvertiseData.Builder().addServiceUuid(
+                    ParcelUuid(
+                        randomUUID()
+                    )
+                ).build()
+            )
+            // Wait for onScanResponseDataSet callback...
+// When done with the advertising:
+            advertiser.stopAdvertisingSet(callback)
+
+             */
+        }
     }
-
-
 }
 
