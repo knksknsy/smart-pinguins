@@ -32,23 +32,15 @@
 #define SIZEOF_ALARM_MODULE_UPDATE_MESSAGE 5
 
 typedef struct {
-	u8 meshDeviceId;
-	u8 meshDataType;
-	u8 meshActionType;
-	u8 meshDataOne;
-	i8 meshDataTwo;
+	u8 meshDeviceId; // node id
+	u8 meshIncidentType; // type of incident, e.g traffic jam
+	u8 meshActionType; // incident type action, e.g SAVE or DELETE
 }AlarmModuleUpdateMessage;
 
 #define SERVICE_DATA_MESSAGE_TYPE_ALARM 25
 #define SERVICE_TYPE_ALARM_UPDATE 33
-#define SERVICE_DATA_TYPE_WINDOW_VERSION_ONE 78
 #define ALARM_MODULE_BROADCAST_TRIGGER_TIME 300
-#define ALARM_MODULE_SENSOR_SCAN_TRIGGER_TIME 100
 #define ASSET_PACKET_BUFFER_SIZE 30
-
-
-#define TEMPERATURE_NO_VALUE  -128
-#define HUMIDITY_NO_VALUE  0xFF
 
 //Service Data (max. 24 byte)
 #define SIZEOF_ADV_STRUCTURE_ALARM_SERVICE_DATA 22 //ToDo
@@ -71,13 +63,11 @@ typedef struct {
     u8 clusterSize;
     u8 networkId; //Nur für Debugging
  
-    //6 Byte Penguin Information
-	u8 meshDataType;
-	u8 meshDeviceId;
-    u8 beaconDataOne;
-    u8 beaconDataTwo;
-    i8 meshDataOne;
-    u8 meshDataTwo;
+    //3 Byte Penguin Information
+	u8 nearestTrafficJamNodeId;
+	u8 nearestBlackIceNodeId;
+	u8 nearestRescueLaneNodeId;
+
 }AdvPacketPenguinData;
 
 typedef struct {
@@ -119,11 +109,6 @@ private:
 		ALARM_SYSTEM_UPDATE = 1
 	};
 
-	enum AlarmModuleActiveStates {
-		ACTIVE = 1,
-		INACTIVE = 0
-	};
-
 	enum BoardType {
 		DEV_BOARD = 1,
 		RUUVI_TAG = 3
@@ -149,40 +134,32 @@ private:
 	{
 		fh_ble_gap_addr_t targetAddress;
 
-	}MeshAccessModuleDisconnectMessage;
+	} MeshAccessModuleDisconnectMessage;
 
-
-	//Für NC REED invertieren
-	enum AlarmModuleStates {
-		DELETE = 1, SAVE = 0
+	enum SERVICE_INCIDENT_TYPE {
+		RESCUE_LANE = 0,
+		TRAFFIC_JAM = 1,
+		BLACK_ICE = 2,
+	};
+	enum SERVICE_ACTION_TYPE {
+		DELETE = 0,
+		SAVE = 1,
 	};
 
-	void InitialiseBME280();
-	void UpdateBarometerData();
+	u8 nearestTrafficJamNodeId;
+	u8 nearestBlackIceNodeId;
+	u8 nearestRescueLaneNodeId;
 
 	void HandleAssetV2Packets(const GapAdvertisementReportEvent& advertisementReportEvent);
 	bool addTrackedAsset(const advPacketAssetServiceData* packet, i8 rssi);
 
 	AlarmModuleConfiguration configuration;
-
-	std::vector<u8> meshDeviceIdArray;
-	std::vector<u8> meshDataTypeArray;
-	std::vector<u8> meshDataOneArray;
-	std::vector<u8> meshDataTwoArray;
-
 	AdvJob* alarmJobHandle;
 	u8 currentAdvChannel;
-	u8 isWindowOpen;
 	u8 index;
 
-	//barometer
-	u32 lastBarometerReadTimeDs;
-	i32 lastTemperatureReading;
-	i8 stateChangedTemperatureReading;
-	u32 lastHumidityReading;
 	u8 lastClusterSize;
 	u8 gpioState;
-	bool isActivated;
 #pragma pack(pop)
 
 public:
@@ -197,9 +174,11 @@ public:
 
 	void BroadcastPenguinAdvertisingPacket();
 
-	void BroadcastAlarmUpdatePacket();
+	void BroadcastAlarmUpdatePacket(u8 incidentNodeId, SERVICE_INCIDENT_TYPE incidentType, SERVICE_ACTION_TYPE incidentAction);
 
 	void RequestAlarmUpdatePacket();
+
+	bool CheckForIncidentUpdate(u8 incidentNodeId, u8 incidentType, u8 actionType);
 
 	void TimerEventHandler(u16 passedTimeDs, u32 appTimerDs);
 
