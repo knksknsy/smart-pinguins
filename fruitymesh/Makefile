@@ -30,6 +30,8 @@
 
 # Makefile.local is used to configure developer specific stuff
 -include Makefile.local
+# Makefile.docker is used to configure docker specific stuff
+#-include Makefile.docker
 
 # *******************************************************************************************
 # You can edit the following parameters for specifying the build, but it is better to copy
