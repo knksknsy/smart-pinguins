@@ -8,10 +8,9 @@
     * [1.1 Docker installieren (MacOS)](#inst_docker)
     * [1.2 Freigeben des seriellen Ports vom Hosts zum Docker-Container](#serial_port)
     * [1.3 Bauen des Docker-Images](#build_docker)
-- [2. Konfiguration des GCC Pfades](#gcc_conf)
-- [3. Ausführen des Docker-Containers](#cont_docker)
-- [4. Bauen und Flashen](#build)
-- [5. Debugging durch JLink](#debugging)
+- [2. Ausführen des Docker-Containers](#cont_docker)
+- [3. Bauen und Flashen](#build)
+- [4. Debugging durch JLink](#debugging)
 <!-- toc -->
 
 <a name="sw_env"></a>
@@ -84,28 +83,8 @@ Falls ```docker-nrf5``` im Terminal nicht erscheint, müssen die folgenden Schri
 
 Im 2. Schritt wird ein Ubuntu-Image gebaut und die vorausgesetzten Packages für die Toolchain installiert. Der Befehl führt nach der Ausführung einen Script aus, der die Toolchain installiert.
 
-<a name="gcc_conf"></a>
-## 2. Konfiguration des GCC Pfades
-
-Das Makefile setzt voraus, dass der Pfad zum GCC bekannt ist. Hierfür stehen 2 Konfigurationsmöglichkeiten zur Auswahl:
-
-1. ```Makefile.local```
-2. ```Makefile.docker```
-
-```Makefile.local``` setzt voraus, dass die Softwareumgebung auf der lokalen Maschine erfolgt ist. Hingegen soll ```Makefile.docker``` verwendet werden, wenn die Verwendung der Softwareumgebung auf dem Docker-Container erfolgen soll.
-
-Für die GCC-Konfiguration für Docker muss ```Makefile.docker```  im ```Makefile``` des Root-Verzeichnis des Projekts inkludiert werden. Passe hierzu die ```Makefile``` wie folgt an:
-
-```
-# Makefile.local is used to configure developer specific stuff
-#-include Makefile.local
-
-# Makefile.docker is used to configure docker specific stuff
--include Makefile.docker
-```
-
 <a name="cont_docker"></a>
-## 3. Ausführen des Docker-Containers
+## 2. Ausführen des Docker-Containers
 
 Stelle sicher, dass Docker installiert, und der serielle Port des Hosts an den Docker-Container freigegeben wurde, bevor der Docker container gestartet werden soll.
 
@@ -117,15 +96,15 @@ Führe folgende Befehle aus, um einen Container vom ```docker-nrf5``` Image zu i
 Kann der Serielle Port nicht an den Container freigegeben werden, dann führe folgende Befehle im Kapitel [1.2 Freigeben des seriellen Ports vom Hosts zum Docker-Container (MacOS)](#serial_port) aus.
 
 <a name="build"></a>
-## 4. Bauen und Flashen
+## 3. Bauen und Flashen
 
-1. Baue das Projekt mit ```$ make``` aus dem Projektverzeichnis ```smart-pinguins/fruitymesh```.
+1. Baue das Projekt mit ```$ make ENV=docker``` aus dem Projektverzeichnis ```smart-pinguins/fruitymesh```.
 2. Der Hex-Output ```FruityMesh.hex``` befindet sich im folgenden Pfad: ```smart-pinguins/fruitymesh/_build```.
 3. Um das Development Kit zu Flashen führe folgenden Befehl im Pfad ```smart-pinguins/fruitymesh/_build``` aus:
 ```nrfjprog --program FruityMesh.hex  --sectorerase -r```
 
 <a name="debugging"></a>
-## 5. Debugging durch JLink
+## 4. Debugging durch JLink
 
 1. Führe folgenden Befehl aus, nachdem der ```docker.sh``` Script ausgeführt wurde:<br/>```$ JLinkRTTClient```
 2. Öffne eine neue zusätzliche Verbindung zum ```nrf5``` Docker Container (im neuen Terminal Fenster):<br/>```$ docker exec -ti nrf5 /bin/bash```

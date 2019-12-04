@@ -28,10 +28,14 @@
 # ****************************************************************************/
 #-------------------------------------------------------------------------------
 
+ENV = local
+
 # Makefile.local is used to configure developer specific stuff
--include Makefile.local
-# Makefile.docker is used to configure docker specific stuff
-#-include Makefile.docker
+ifeq ($(ENV),$(filter $(ENV),local docker))
+	-include Makefile.$(ENV)
+else
+$(error Makefile.$(ENV) not found)
+endif
 
 # *******************************************************************************************
 # You can edit the following parameters for specifying the build, but it is better to copy
