@@ -5,7 +5,7 @@ import de.hdm.smart_penguins.utils.ByteArrayParser
 import de.hdm.smart_penguins.utils.Util.getTypeForInt
 
 class MessageMeshBroadcast(bytes: ByteArray) {
-    val parser = ByteArrayParser(Constants.OFFSET_MESSAGE_BROADCAST)
+    val parser = ByteArrayParser(Constants.OFFSET_MESSAGE_MESH_BROADCAST)
     var length = parser.readSwappedUnsignedByte(bytes)
     var type = parser.readSwappedUnsignedByte(bytes)
     val mUuid = parser.readSwappedUnsignedShort(bytes)

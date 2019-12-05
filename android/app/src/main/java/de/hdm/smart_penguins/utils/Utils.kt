@@ -67,4 +67,12 @@ object Util {
         }
     }
 
+    fun <T> ternary(bool: Boolean, var1: T, var2: T): T {
+        if (bool) {
+            return var1
+        } else {
+            return var2
+        }
+    }
+
 }

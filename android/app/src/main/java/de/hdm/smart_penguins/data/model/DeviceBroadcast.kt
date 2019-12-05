@@ -1,48 +1,56 @@
 package de.hdm.smart_penguins.data.model
 
+import de.hdm.smart_penguins.data.Constants
+import de.hdm.smart_penguins.data.Constants.MAX_DATA_LENGTH
+import de.hdm.smart_penguins.data.Constants.VAR_NOT_SET
+import de.hdm.smart_penguins.utils.ByteArrayParser
 import de.hdm.smart_penguins.utils.Util.setShort
-import de.hdm.smart_penguins.utils.Util.setUUID
 import de.hdm.smart_penguins.utils.Util.setUnsignedChar
-import java.util.*
+import de.hdm.smart_penguins.utils.Util.ternary
 
-class DeviceBroadcast(
-    length: Int,
-    type: Int,
-    uuid: UUID,
-    messageType: Int,
-    advertisingChannel: Int,
-    deviceType: Int,
-    direction: Int,
-    isSlippery: Boolean,
-    isEmergency: Boolean
-) {
-    lateinit var byteArray: ByteArray
+class DeviceBroadcast {
+    var byteArray = ByteArray(MAX_DATA_LENGTH)
+    var length: Int = VAR_NOT_SET
+    var type: Int = VAR_NOT_SET
+    var messageType: Int = VAR_NOT_SET
+    var advertisingChannel: Int = VAR_NOT_SET
+    var deviceType: Int = VAR_NOT_SET
+    var direction: Int = VAR_NOT_SET
+    var isSlippery: Boolean = false
+    var isEmergency: Boolean = false
 
-    init {
-        this.byteArray = ByteArray(length)
+    fun  init(
+        length: Int,
+        type: Int,
+        messageType: Int,
+        advertisingChannel: Int,
+        deviceType: Int,
+        direction: Int,
+        isSlippery: Boolean,
+        isEmergency: Boolean
+    ) : ByteArray {
         setUnsignedChar(byteArray, 0, length)
         setUnsignedChar(byteArray, 1, type)
-        setUUID(byteArray, 2, uuid)
-        setShort(byteArray, 4, messageType)
-        setUnsignedChar(byteArray, 5, advertisingChannel)
-        setUnsignedChar(byteArray, 6, deviceType)
-        setUnsignedChar(byteArray, 7, direction)
-        setUnsignedChar(
-            byteArray, 8, if (isSlippery) {
-                1
-            } else {
-                0
-            }
-        )
-        setUnsignedChar(
-            byteArray, 9, if (isEmergency) {
-                1
-            } else {
-                0
-            }
-        )
+        setShort(byteArray, 2, messageType)
+        setUnsignedChar(byteArray, 4, advertisingChannel)
+        setUnsignedChar(byteArray, 5, deviceType)
+        setUnsignedChar(byteArray, 6, direction)
+        setUnsignedChar(byteArray, 7, ternary(isSlippery, 1, 0))
+        setUnsignedChar(byteArray, 8, ternary(isEmergency, 1, 0))
+        return byteArray
+    }
 
-
+    fun initWithBytes(byteArray: ByteArray) : DeviceBroadcast {
+        val parser = ByteArrayParser(Constants.OFFSET_MESSAGE_DEVICE_BROADCAST)
+        length = parser.readSwappedUnsignedByte(byteArray).toInt()
+        type = parser.readSwappedUnsignedByte(byteArray).toInt()
+        messageType = parser.readSwappedUnsignedShort(byteArray)
+        advertisingChannel = parser.readSwappedUnsignedByte(byteArray).toInt()
+        deviceType = parser.readSwappedUnsignedByte(byteArray).toInt()
+        direction = parser.readSwappedUnsignedByte(byteArray).toInt()
+        isSlippery = parser.readSwappedUnsignedByte(byteArray).toInt() == 1
+        isEmergency = parser.readSwappedUnsignedByte(byteArray).toInt() == 1
+        return this
     }
 
 }

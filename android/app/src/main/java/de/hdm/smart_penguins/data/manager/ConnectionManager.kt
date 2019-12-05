@@ -1,5 +1,4 @@
 package de.hdm.smart_penguins.data.manager
-
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.le.AdvertiseData
 import android.bluetooth.le.AdvertisingSet
@@ -16,9 +15,12 @@ import de.hdm.smart_penguins.data.Constants.BLE_SCAN_INTERVAL
 import de.hdm.smart_penguins.data.Constants.DELAY_BLE_SCANNER
 import de.hdm.smart_penguins.data.Constants.DELAY_BLE_SCANNRESULT_TIMEOUT
 import de.hdm.smart_penguins.data.Constants.MANUFACTURER_DATA
+import de.hdm.smart_penguins.data.Constants.MESSAGE_SIZE_DEVICE_BROADCAST
+import de.hdm.smart_penguins.data.Constants.MESSAGE_TYPE_DEVICE_BROADCAST
 import de.hdm.smart_penguins.data.Constants.NETWORK_ID_NOT_SET
 import de.hdm.smart_penguins.data.Constants.SERVICE_UUID
 import de.hdm.smart_penguins.data.model.BleNode
+import de.hdm.smart_penguins.data.model.DeviceBroadcast
 import de.hdm.smart_penguins.data.model.NodeList
 import no.nordicsemi.android.support.v18.scanner.*
 import java.util.*
@@ -63,14 +65,26 @@ class ConnectionManager @Inject constructor(
         for (scanResult in results) {
             if (scanResult.scanRecord != null &&
                 scanResult.scanRecord!!.bytes != null &&
-                scanResult.scanRecord!!.bytes!!.size >= Constants.MESSAGE_SIZE_JOINME
+                scanResult.scanRecord!!.bytes!!.size >= Constants.MESSAGE_SIZE_MESH_BROADCAST
             ) {
-                val isMeshBroadCastMessage = (scanResult.scanRecord!!.serviceUuids != null
+                val isMwayMessage = (scanResult.scanRecord!!.serviceUuids != null
                         && scanResult.scanRecord!!.serviceUuids!!.size > 0
                         && scanResult.scanRecord!!.serviceUuids!![0] == ParcelUuid.fromString(
-                    Constants.SERVICE_UUID
-                ))
-                if (isMeshBroadCastMessage) {
+                    SERVICE_UUID
+                )
+                        )
+                if (isMwayMessage) {
+                    try {
+                        val deviceBroadcast: DeviceBroadcast = DeviceBroadcast().initWithBytes(
+                            scanResult.scanRecord!!.bytes!!
+                        )
+                        Log.e(TAG, "Received device broadcast")
+                        if(deviceBroadcast.messageType == MESSAGE_TYPE_DEVICE_BROADCAST) {
+                            continue
+                        }
+
+                    } catch (ex: Exception) {
+                    }
                     val node = BleNode(scanResult)
                     if (node.messageMeshAccessBroadcast!!.messageType == Constants.MESSAGE_TYPE_BROADCAST) {
                         nodeList.addNode(node)
@@ -116,7 +130,7 @@ class ConnectionManager @Inject constructor(
             )
             filters.add(
                 ScanFilter.Builder()
-                    .setServiceUuid(ParcelUuid.fromString(Constants.SERVICE_UUID))
+                    .setServiceUuid(ParcelUuid.fromString(SERVICE_UUID))
                     .build()
             )
 
@@ -164,12 +178,14 @@ class ConnectionManager @Inject constructor(
                 .setInterval(AdvertisingSetParameters.INTERVAL_HIGH)
                 .setTxPowerLevel(AdvertisingSetParameters.TX_POWER_MEDIUM)
                 .build()
+            val broadcast  = DeviceBroadcast().init(MESSAGE_SIZE_DEVICE_BROADCAST,151,
+                MESSAGE_TYPE_DEVICE_BROADCAST,151,151,151,false,false)
+            val data = AdvertiseData.Builder()
+                .addServiceUuid(ParcelUuid.fromString(SERVICE_UUID))
+                .addServiceData(ParcelUuid.fromString(SERVICE_UUID),broadcast)
+                .build()
 
-            val data = AdvertiseData.Builder().addServiceData(
-                   ParcelUuid.fromString(SERVICE_UUID),
-            "You shog".toByteArray()).build();
-
-            val callback = object  :AdvertisingSetCallback() {
+            val callback = object : AdvertisingSetCallback() {
                 override fun onAdvertisingSetStarted(
                     advertisingSet: AdvertisingSet,
                     txPower: Int,
@@ -201,28 +217,28 @@ class ConnectionManager @Inject constructor(
                 }
             }
 
-            advertiser.startAdvertisingSet(parameters, data, null,null , null, callback)
+            advertiser.startAdvertisingSet(parameters, data, null, null, null, callback)
 
-           /* // After onAdvertisingSetStarted callback is called, you can modify the
-// advertising data and scan response data:
-            currentAdvertisingSet.setAdvertisingData(
-                AdvertiseData.Builder().setIncludeDeviceName(true).setIncludeTxPowerLevel(
-                    true
-                ).build()
-            )
-            // Wait for onAdvertisingDataSet callback...
-            currentAdvertisingSet.setScanResponseData(
-                AdvertiseData.Builder().addServiceUuid(
-                    ParcelUuid(
-                        randomUUID()
-                    )
-                ).build()
-            )
-            // Wait for onScanResponseDataSet callback...
-// When done with the advertising:
-            advertiser.stopAdvertisingSet(callback)
+            /* // After onAdvertisingSetStarted callback is called, you can modify the
+ // advertising data and scan response data:
+             currentAdvertisingSet.setAdvertisingData(
+                 AdvertiseData.Builder().setIncludeDeviceName(true).setIncludeTxPowerLevel(
+                     true
+                 ).build()
+             )
+             // Wait for onAdvertisingDataSet callback...
+             currentAdvertisingSet.setScanResponseData(
+                 AdvertiseData.Builder().addServiceUuid(
+                     ParcelUuid(
+                         randomUUID()
+                     )
+                 ).build()
+             )
+             // Wait for onScanResponseDataSet callback...
+ // When done with the advertising:
+             advertiser.stopAdvertisingSet(callback)
 
-             */
+              */
         }
     }
 }
