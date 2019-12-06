@@ -248,16 +248,10 @@ void AlarmModule::MeshMessageReceivedHandler(BaseConnection* connection,
 
 	//Must call superclass for handling
 	Module::MeshMessageReceivedHandler(connection, sendData, packetHeader);
-	connPacketModule* packet = (connPacketModule*) packetHeader;
 
-	logt("CONFIG", "Action Type, %d", packet->actionType);
-	logt("CONFIG", "Message type, %d", (int)packetHeader->messageType);
+	connPacketModule* packet = (connPacketModule*) packetHeader;
 	AlarmModuleUpdateMessage* data =
 			(AlarmModuleUpdateMessage*) packet->data;
-
-	logt("CONFIG", "INCIDENT NODE ID %u",data->meshDeviceId);
-	logt("CONFIG", "MESH DATA TYPE %u", data->meshIncidentType);
-	logt("CONFIG", "MESH ACTION TYPE %u", data->meshActionType);
 
 	//Check if this request is meant for modules in general
 	if (packetHeader->messageType == MessageType::MODULE_TRIGGER_ACTION) {
@@ -269,6 +263,7 @@ void AlarmModule::MeshMessageReceivedHandler(BaseConnection* connection,
 			if (packet->actionType
 					== AlarmModuleTriggerActionMessages::GET_ALARM_SYSTEM_UPDATE) {
 				logt("CONFIG", "Received Alarm Update GET Request");
+				// For each incident, check if there is a saved one and if there is, broadcast it out
 				if(nearestTrafficJamNodeId != 0) {
 					BroadcastAlarmUpdatePacket(nearestTrafficJamNodeId, SERVICE_INCIDENT_TYPE::TRAFFIC_JAM, SERVICE_ACTION_TYPE::SAVE);
 				}
