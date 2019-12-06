@@ -33,8 +33,8 @@
 
 typedef struct {
 	u8 meshDeviceId; // node id
-	u8 meshIncidentType; // type of incident, e.g traffic jam
-	u8 meshActionType; // incident type action, e.g SAVE or DELETE
+	u8 meshIncidentType; // type of incident, e.g traffic jam, one of SERVICE_INCIDENT_TYPE
+	u8 meshActionType; // incident type action, e.g SAVE or DELETE, one of SERVICE_ACTION_TYPE
 }AlarmModuleUpdateMessage;
 
 #define SERVICE_DATA_MESSAGE_TYPE_ALARM 25

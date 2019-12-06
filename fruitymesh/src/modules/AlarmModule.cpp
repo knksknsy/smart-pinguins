@@ -269,8 +269,15 @@ void AlarmModule::MeshMessageReceivedHandler(BaseConnection* connection,
 			if (packet->actionType
 					== AlarmModuleTriggerActionMessages::GET_ALARM_SYSTEM_UPDATE) {
 				logt("CONFIG", "Received Alarm Update GET Request");
-
-				// TODO: send current states
+				if(nearestTrafficJamNodeId != 0) {
+					BroadcastAlarmUpdatePacket(nearestTrafficJamNodeId, SERVICE_INCIDENT_TYPE::TRAFFIC_JAM, SERVICE_ACTION_TYPE::SAVE);
+				}
+				if(nearestBlackIceNodeId != 0) {
+					BroadcastAlarmUpdatePacket(nearestBlackIceNodeId, SERVICE_INCIDENT_TYPE::BLACK_ICE, SERVICE_ACTION_TYPE::SAVE);
+				}
+				if(nearestRescueLaneNodeId != 0) {
+					BroadcastAlarmUpdatePacket(nearestRescueLaneNodeId, SERVICE_INCIDENT_TYPE::RESCUE_LANE, SERVICE_ACTION_TYPE::SAVE);
+				}
 			}
 			if (packet->actionType
 					== AlarmModuleTriggerActionMessages::SET_ALARM_SYSTEM_UPDATE) {
@@ -285,6 +292,15 @@ void AlarmModule::MeshMessageReceivedHandler(BaseConnection* connection,
 }
 ;
 
+/**
+ * CheckForIncidentUpdate, checks if an incoming incident updates an existing one
+ *
+ * @param u8 incidentNodeId, the id of the node where an incident happened / vanished
+ * @param u8 incidentType, the type of incident, one of SERVICE_INCIDENT_TYPE
+ * @param u8 actionType, the action type, one of SERVICE_ACTION_TYPE
+ *
+ * returns bool changed, true if existing incident got updated, false if not
+ */
 bool AlarmModule::CheckForIncidentUpdate(u8 incidentNodeId, u8 incidentType, u8 actionType) {
 	bool changed = false;
 	SERVICE_INCIDENT_TYPE incType = (SERVICE_INCIDENT_TYPE)incidentType;
