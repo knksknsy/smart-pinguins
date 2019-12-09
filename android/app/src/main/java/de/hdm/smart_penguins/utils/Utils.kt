@@ -42,10 +42,6 @@ object Util {
         data[byteIndex] = (value and 0xff).toByte()
     }
 
-    fun setTunnelType(data: ByteArray, byteIndex: Int, type: Int) {
-        data[byteIndex] = (type and 0x3).toByte()
-    }
-
 
     fun setUUID(data: ByteArray, byteIndex: Int, uuid: UUID) {
         val bb = ByteBuffer.wrap(ByteArray(16))
@@ -70,4 +66,13 @@ object Util {
             else -> return Constants.UNKOWN_BOARD
         }
     }
+
+    fun <T> ternary(bool: Boolean, var1: T, var2: T): T {
+        if (bool) {
+            return var1
+        } else {
+            return var2
+        }
+    }
+
 }
