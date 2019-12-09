@@ -67,25 +67,21 @@ typedef struct {
 	u8 nearestTrafficJamNodeId;
 	u8 nearestBlackIceNodeId;
 	u8 nearestRescueLaneNodeId;
-
 }AdvPacketPenguinData;
 
 typedef struct {
+	u16 mway_servicedata;
     //6 byte header
     u8 len;  
     u8 type; 
     u16 uuid;
     u16 messageType;
-    //1 byte capabilities
-    u8 advertisingChannel :2;// 0 = not available, 1=37, 2=38, 3=39
- 
-    //1 byte additional beacon information
-    i8 txPower;
  
     //3 byte car information (Können/sollten auch nur als Bits gesetzt werden)
-    u8 isDrivingDirection;
-    u8 isBroken;
-    u8 isIcy;
+    u8 deviceType; // Car, bicycle, pedestrian
+	u8 direction; // 1 = North, 2 = East, 12 = NorthEast etc-
+	u8 isEmergency;
+    u8 isSlippery;
 }AdvPacketCarData;
 
 class AlarmModule: public Module {
