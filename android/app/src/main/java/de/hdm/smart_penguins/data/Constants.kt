@@ -89,4 +89,23 @@ object Constants {
     val NO_VALUE_SPOT_NUMBER: Short = 0
     val NO_VALUE_LATLNG = -1.0
 
+    //PARAMs
+    val PARAM_VIBRATION_TIME: Long = 150
+    val PARAM_ZOOM_LEVEL = 19.5
+    val PARAM_INTENT_TIME = 60000
+    val PARAM_SCAN_RECORD_OFFSET = 7
+
+    val ACTIVE_STATE_ACTIVE = 1
+    val PARAM_IN_RANGE_DISTANCE: Float = 100F
+    val PARAM_IN_RANGE_DOOR: Float = 1F
+    val ALERT_TEMPERATURE: Short = 20
+    val SETTINGS_PATH = "com.android.settings"
+    val SETTINGS_PATH_BLUETOOTH = "com.android.settings.bluetooth.BluetoothSettings"
+    val PARAM_COORD_MWAY_LAT_SETUP = 48.808304
+    val PARAM_COORD_MWAY_LNG_SETUP = 9.178907
+    val PARAM_COORD_MWAY_LAT = 48.808666
+    val PARAM_COORD_MWAY_LNG = 9.178941
+    val TAG_WAKE_UP = "closeme:wakeup"
+    val PARAM_MAP_ICON_SIZE = 80
+
 }

@@ -104,6 +104,8 @@ class ConnectionManager @Inject constructor(
 
     fun initBLEScanner() {
         application.activityComponent?.inject(this)
+        example1()
+
         if (!isScannerBlocked) {
             doInitBLEScanner()
             setScannerInitiationHandler()
@@ -114,7 +116,6 @@ class ConnectionManager @Inject constructor(
 
     private fun doInitBLEScanner() {
         try {
-            example1()
             stopBLEScanner()
             val scanSettings = ScanSettings.Builder()
                 .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)

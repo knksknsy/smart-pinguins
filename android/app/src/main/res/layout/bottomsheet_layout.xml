@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/bottomSheet"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_marginStart="-1.5dp"
+    android:layout_marginEnd="-1.5dp"
+    android:layout_marginBottom="-1.5dp"
+    android:background="@drawable/background_round_stroke_top"
+    android:clipToPadding="true"
+    android:scrollbars="none"
+    app:behavior_peekHeight="120dp"
+    app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/upButton"
+            style="@style/informationBig"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingBottom="10dp"
+            android:text="^" />
+
+        <TextView
+            android:id="@+id/infoText"
+            style="@style/informationBig"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="10dp"
+            android:text="Choose a beacon from the list and place it by clicking on the map" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/PeachPuff" />
+    </LinearLayout>
+
+</androidx.core.widget.NestedScrollView>
