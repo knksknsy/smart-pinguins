@@ -4,11 +4,9 @@ import android.annotation.SuppressLint
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
-import de.hdm.smart_penguins.data.manager.DataManager
-import de.hdm.smart_penguins.data.model.PersistentNode
+import de.hdm.smart_penguins.data.model.PersistentNodeList
 import de.hdm.smart_penguins.utils.PermissionDependentTask
 import me.dm7.barcodescanner.zxing.ZXingScannerView
-import javax.inject.Inject
 
 class QrScannerActivity : BaseActivity(), ZXingScannerView.ResultHandler {
 
@@ -62,8 +60,15 @@ class QrScannerActivity : BaseActivity(), ZXingScannerView.ResultHandler {
     override fun handleResult(rawResult: com.google.zxing.Result?) {
         if (rawResult != null) {
             try {
-                val node = PersistentNode.fromJson(rawResult.toString())
-                dataManager.persistenNode = node
+                val nodeList = PersistentNodeList.fromJson(rawResult.toString())
+                if (nodeList != null && nodeList.value.stream()
+                        .noneMatch { x ->
+                            dataManager.qrScannedNodes.stream()
+                                .anyMatch() { b -> b.nodeID == x.nodeID }
+                        }
+                ) {
+                    dataManager.qrScannedNodes.addAll(nodeList.value)
+                }
             } catch (exception: Exception) {
                 Log.e(TAG, exception.toString())
             }

@@ -38,6 +38,16 @@
             android:layout_width="match_parent"
             android:layout_height="1dp"
             android:background="@color/PeachPuff" />
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/mapBeaconList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+        </ScrollView>
     </LinearLayout>
 
 </androidx.core.widget.NestedScrollView>

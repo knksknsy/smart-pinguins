@@ -11,7 +11,7 @@ class DataManager @Inject constructor(
     var application: SmartApplication
 
 ) {
-    var  persistenNode : PersistentNode? = null
+    var qrScannedNodes = ArrayList<PersistentNode>()
 
     private val TAG = "DATA_MANAGER"
 }

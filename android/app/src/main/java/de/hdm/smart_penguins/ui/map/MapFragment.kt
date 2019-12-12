@@ -12,6 +12,7 @@ import android.view.ViewGroup
 import androidx.annotation.DrawableRes
 import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.Fragment
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -23,6 +24,7 @@ import de.hdm.smart_penguins.SmartApplication
 import de.hdm.smart_penguins.data.Constants
 import de.hdm.smart_penguins.data.manager.DataManager
 import de.hdm.smart_penguins.ui.QrScannerActivity
+import de.hdm.smart_penguins.ui.adapter.MapListAdapter
 import kotlinx.android.synthetic.main.bottomsheet_layout.*
 import kotlinx.android.synthetic.main.fragment_map.*
 import javax.inject.Inject
@@ -30,6 +32,7 @@ import javax.inject.Inject
 class MapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnCameraMoveListener {
     @Inject
     lateinit var dataManager: DataManager
+    private var adapter: MapListAdapter? = null
 
     private var gMap: GoogleMap? = null
     private var mapFragment: SupportMapFragment? = null
@@ -37,7 +40,6 @@ class MapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnCameraMoveListen
     private var bottomSheetBehavior: BottomSheetBehavior<View>? = null
     private var positionMarker: Marker? = null
     private var isLocationEnabled = false
-
 
 
     override fun onCreateView(
@@ -62,6 +64,7 @@ class MapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnCameraMoveListen
             val intent = Intent(context, QrScannerActivity::class.java)
             startActivity(intent);
         }
+        setBeaconList()
     }
 
     private fun expandBottomSheet() {
@@ -75,11 +78,8 @@ class MapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnCameraMoveListen
     override fun onResume() {
         super.onResume()
         mapFragment?.getMapAsync(this)
-        if (dataManager.persistenNode != null) {
-            infoText.text = "Add node: " + dataManager.persistenNode
-        }
+        adapter?.update(dataManager.qrScannedNodes)
     }
-
 
     private fun setMarker(placedBeaconType: Int, point: LatLng) {
 
@@ -137,6 +137,14 @@ class MapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnCameraMoveListen
             }
         }
         ani.start();
+    }
+
+
+    private fun setBeaconList() {
+        mapBeaconList.layoutManager = LinearLayoutManager(context)
+        adapter = MapListAdapter(context, { _, _ ->
+        }, { beacon -> }, dataManager.qrScannedNodes)
+        mapBeaconList.adapter = adapter
     }
 
 

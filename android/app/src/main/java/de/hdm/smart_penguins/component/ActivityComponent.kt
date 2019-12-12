@@ -8,7 +8,7 @@ import de.hdm.smart_penguins.SmartApplication
 import de.hdm.smart_penguins.data.manager.ConnectionManager
 import de.hdm.smart_penguins.data.manager.DataManager
 import de.hdm.smart_penguins.data.model.NodeList
-import de.hdm.smart_penguins.data.model.PersistentNode
+import de.hdm.smart_penguins.data.model.PersistentNodeList
 import de.hdm.smart_penguins.ui.BaseActivity
 import de.hdm.smart_penguins.ui.BaseFragment
 import de.hdm.smart_penguins.ui.map.MapFragment
@@ -33,7 +33,7 @@ interface ActivityComponent {
 }
 
 typealias BleNodesLiveData = MutableLiveData<NodeList>
-typealias PersistentLiveData = MutableLiveData<List<PersistentNode>>
+typealias PersistentLiveData = MutableLiveData<List<PersistentNodeList>>
 
 @Module
 class LiveDataModule {
