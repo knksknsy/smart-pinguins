@@ -1,11 +1,59 @@
 <resources>
 
     <!-- Base application theme. -->
-    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+    <style name="AppTheme" parent="Theme.AppCompat">
         <!-- Customize your theme here. -->
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowTranslucentStatus">true</item>
+        <item name="android:fontFamily">@font/lato</item>
+    </style>
+
+
+    <style name="headlineBig">
+        <item name="android:textSize">17sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="headlineSmall">
+        <item name="android:textSize">14sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="textField">
+
+    </style>
+
+    <style name="information">
+        <item name="android:textStyle">bold</item>
+        <item name="android:textAlignment">center</item>
+        <item name="android:textSize">15sp</item>
+    </style>
+
+    <style name="informationBig" parent="information">
+        <item name="android:textSize">17sp</item>
+    </style>
+
+    <style name="textFieldAligned" parent="textField">
+        <item name="android:textAlignment">textStart</item>
+    </style>
+
+    <style name="button" parent="information">
+        <item name="android:textColor">@color/colorPrimary</item>
+        <item name="android:textSize">17sp</item>
+        <item name="android:layout_margin">15dp</item>
+    </style>
+
+    <style name="gridItem">
+        <item name="android:padding">5dp</item>
+    </style>
+
+    <style name="gridItemDescription" parent="gridItem">
+        <item name="android:textSize">17sp</item>
+        <item name="android:textStyle">bold</item>
     </style>
 
 </resources>
