@@ -75,4 +75,12 @@ object Util {
         }
     }
 
+    fun checkIfNumberIsGerade(number: Int): Boolean {
+        return number % 2 == 0
+    }
+
+    fun checkIfNodesAreOpposite(nodeA: Int, nodeB: Int): Boolean {
+        return checkIfNumberIsGerade(nodeA) == checkIfNumberIsGerade(nodeB)
+    }
+
 }

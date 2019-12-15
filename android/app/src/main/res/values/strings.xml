@@ -4,5 +4,6 @@
     <string name="title_dashboard">Dashboard</string>
     <string name="title_notifications">Notifications</string>
     <string name="google_maps_key">AIzaSyAk_Lp6cRfjrWp8HrYvzncWycVz5SqcjlA</string>
+    <string name="title_map">Map</string>
 
 </resources>

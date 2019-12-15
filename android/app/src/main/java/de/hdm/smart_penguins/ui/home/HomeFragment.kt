@@ -13,12 +13,14 @@ import de.hdm.smart_penguins.ui.BaseFragment
 
 class HomeFragment : BaseFragment() {
 
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
         super.onCreateView(inflater, container, savedInstanceState)
+
 
         val root = inflater.inflate(R.layout.fragment_home, container, false)
         val listView: RecyclerView = root.findViewById(R.id.list)
@@ -28,11 +30,13 @@ class HomeFragment : BaseFragment() {
         nodesLiveData.observe(this, Observer { data ->
             adapter.updateBeaconList(data)
         })
+
+        alarm.observe(this, Observer { alarm -> })
         return root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
     }
+
 }

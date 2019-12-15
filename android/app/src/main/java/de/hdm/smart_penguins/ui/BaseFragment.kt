@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import de.hdm.smart_penguins.SmartApplication
+import de.hdm.smart_penguins.component.AlarmLiveData
 import de.hdm.smart_penguins.component.BleNodesLiveData
 import javax.inject.Inject
 
@@ -13,6 +14,9 @@ open class BaseFragment() : Fragment() {
 
     @Inject
     lateinit var nodesLiveData: BleNodesLiveData
+
+    @Inject
+    lateinit var alarm: AlarmLiveData
 
     override fun onCreateView(
         inflater: LayoutInflater,
