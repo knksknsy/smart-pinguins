@@ -7,6 +7,8 @@ import dagger.Subcomponent
 import de.hdm.smart_penguins.SmartApplication
 import de.hdm.smart_penguins.data.manager.ConnectionManager
 import de.hdm.smart_penguins.data.manager.DataManager
+import de.hdm.smart_penguins.data.manager.SensorManager
+import de.hdm.smart_penguins.data.model.Alarm
 import de.hdm.smart_penguins.data.model.NodeList
 import de.hdm.smart_penguins.data.model.PersistentNodeList
 import de.hdm.smart_penguins.ui.BaseActivity
@@ -22,9 +24,14 @@ annotation class ActivityScope
 @Subcomponent(
     modules = arrayOf(
         ConnectionModule::class,
-        LiveDataModule::class
+        LiveDataModule::class,
+        SensorModule::class
     )
 )
+
+//TODO Add here your Fragment where you want to inject things
+// -> Remember you have to call the inject Method in the Fragment itself
+
 interface ActivityComponent {
     fun inject(activity: BaseActivity)
     fun inject(fragment: BaseFragment)
@@ -33,6 +40,8 @@ interface ActivityComponent {
 }
 
 typealias BleNodesLiveData = MutableLiveData<NodeList>
+typealias AlarmLiveData = MutableLiveData<Alarm>
+
 typealias PersistentLiveData = MutableLiveData<List<PersistentNodeList>>
 
 @Module
@@ -44,6 +53,10 @@ class LiveDataModule {
     @Provides
     @ActivityScope
     fun providePersistentList() = PersistentLiveData()
+
+    @Provides
+    @ActivityScope
+    fun provideAlarm() = AlarmLiveData()
 }
 
 @Module
@@ -61,6 +74,15 @@ class DataModule {
     @Provides
     fun providesDataManager(application: SmartApplication): DataManager {
         return DataManager(application)
+    }
+}
+
+@Module
+class SensorModule {
+    @ActivityScope
+    @Provides
+    fun providesSensorManager(application: SmartApplication): SensorManager {
+        return SensorManager(application)
     }
 }
 

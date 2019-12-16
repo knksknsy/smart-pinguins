@@ -1,4 +1,5 @@
 package de.hdm.smart_penguins.data.manager
+
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.le.AdvertiseData
 import android.bluetooth.le.AdvertisingSet
@@ -9,6 +10,7 @@ import android.os.Handler
 import android.os.ParcelUuid
 import android.util.Log
 import de.hdm.smart_penguins.SmartApplication
+import de.hdm.smart_penguins.component.AlarmLiveData
 import de.hdm.smart_penguins.component.BleNodesLiveData
 import de.hdm.smart_penguins.data.Constants
 import de.hdm.smart_penguins.data.Constants.BLE_SCAN_INTERVAL
@@ -19,9 +21,8 @@ import de.hdm.smart_penguins.data.Constants.MESSAGE_SIZE_DEVICE_BROADCAST
 import de.hdm.smart_penguins.data.Constants.MESSAGE_TYPE_DEVICE_BROADCAST
 import de.hdm.smart_penguins.data.Constants.NETWORK_ID_NOT_SET
 import de.hdm.smart_penguins.data.Constants.SERVICE_UUID
-import de.hdm.smart_penguins.data.model.BleNode
-import de.hdm.smart_penguins.data.model.DeviceBroadcast
-import de.hdm.smart_penguins.data.model.NodeList
+import de.hdm.smart_penguins.data.model.*
+import de.hdm.smart_penguins.utils.Util.checkIfNodesAreOpposite
 import no.nordicsemi.android.support.v18.scanner.*
 import java.util.*
 import javax.inject.Inject
@@ -32,9 +33,14 @@ import javax.inject.Singleton
 class ConnectionManager @Inject constructor(
     var application: SmartApplication
 ) {
-    private lateinit var currentAdvertisingSet: AdvertisingSet
     @Inject
     lateinit var nodesLiveData: BleNodesLiveData
+    @Inject
+    lateinit var alarm: AlarmLiveData
+    @Inject
+    lateinit var sensorManager: SensorManager
+
+    private lateinit var currentAdvertisingSet: AdvertisingSet
     private var listener: ((BleNode) -> Unit)? = null
     private var mScanner: BluetoothLeScannerCompat? = null
     val nodeList = NodeList()
@@ -79,7 +85,7 @@ class ConnectionManager @Inject constructor(
                             scanResult.scanRecord!!.bytes!!
                         )
                         Log.e(TAG, "Received device broadcast")
-                        if(deviceBroadcast.messageType == MESSAGE_TYPE_DEVICE_BROADCAST) {
+                        if (deviceBroadcast.messageType == MESSAGE_TYPE_DEVICE_BROADCAST) {
                             continue
                         }
 
@@ -94,11 +100,40 @@ class ConnectionManager @Inject constructor(
             }
         }
         nodeList.sort()
-        if (nodeList.size > 0) Log.e(
-            TAG,
-            nodeList.get(0).messageMeshAccessBroadcast?.deviceNumber.toString()
-        )
         nodesLiveData.value = nodeList
+        if (nodeList.size > 0) {
+            val broadcast = nodeList.get(0).messageMeshAccessBroadcast
+            Log.e(TAG, broadcast?.deviceNumber.toString())
+            checkNodeForAlarm(broadcast)
+        }
+    }
+
+    private fun checkNodeForAlarm(broadcast: MessageMeshBroadcast?) {
+        if (broadcast != null
+            && directionAndNodeCheck(broadcast, broadcast.nearestBlackIceNodeId.toInt())
+            && directionAndNodeCheck(broadcast, broadcast.nearestRescueLaneNodeId.toInt())
+            && directionAndNodeCheck(broadcast, broadcast.nearestTrafficJamNodeId.toInt())
+        ) {
+            alarm.value = Alarm(
+                broadcast.nearestBlackIceNodeId.toInt(),
+                broadcast.nearestRescueLaneNodeId.toInt(),
+                broadcast.nearestTrafficJamNodeId.toInt(),
+                broadcast.deviceNumber.toInt()
+            )
+        } else {
+            alarm.value = null
+        }
+    }
+
+    private fun directionAndNodeCheck(
+        broadcast: MessageMeshBroadcast,
+        nodeEmergency: Int
+    ): Boolean {
+        return nodeEmergency != 0
+                && (sensorManager.isMyDirection(broadcast.direction.toInt())
+                && !checkIfNodesAreOpposite(broadcast.deviceNumber.toInt(), nodeEmergency))
+                || (!sensorManager.isMyDirection(broadcast.direction.toInt())
+                && checkIfNodesAreOpposite(broadcast.deviceNumber.toInt(), nodeEmergency))
     }
 
 
@@ -179,11 +214,13 @@ class ConnectionManager @Inject constructor(
                 .setInterval(AdvertisingSetParameters.INTERVAL_HIGH)
                 .setTxPowerLevel(AdvertisingSetParameters.TX_POWER_MEDIUM)
                 .build()
-            val broadcast  = DeviceBroadcast().init(MESSAGE_SIZE_DEVICE_BROADCAST,151,
-                MESSAGE_TYPE_DEVICE_BROADCAST,151,151,151,false,false)
+            val broadcast = DeviceBroadcast().init(
+                MESSAGE_SIZE_DEVICE_BROADCAST, 151,
+                MESSAGE_TYPE_DEVICE_BROADCAST, 151, 151, 151, false, false
+            )
             val data = AdvertiseData.Builder()
                 .addServiceUuid(ParcelUuid.fromString(SERVICE_UUID))
-                .addServiceData(ParcelUuid.fromString(SERVICE_UUID),broadcast)
+                .addServiceData(ParcelUuid.fromString(SERVICE_UUID), broadcast)
                 .build()
 
             val callback = object : AdvertisingSetCallback() {
