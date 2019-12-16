@@ -174,7 +174,7 @@ public:
 
 	void RequestAlarmUpdatePacket();
 
-	bool CheckForIncidentUpdate(u8 incidentNodeId, u8 incidentType, u8 actionType);
+	bool UpdateSavedIncident(u8 incidentNodeId, u8 incidentType, u8 actionType);
 
 	void TimerEventHandler(u16 passedTimeDs, u32 appTimerDs);
 

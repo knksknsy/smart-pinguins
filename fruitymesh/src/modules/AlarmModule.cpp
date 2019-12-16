@@ -76,7 +76,7 @@ void AlarmModule::ButtonHandler(u8 buttonId, u32 holdTimeDs) {
 	UpdateGpioState();
 
 	// Broadcast a rescue lane alarm
-	BroadcastAlarmUpdatePacket(GS->node.configuration.nodeId, SERVICE_INCIDENT_TYPE::RESCUE_LANE, SERVICE_ACTION_TYPE::SAVE);
+	BroadcastAlarmUpdatePacket(GS->node.configuration.nodeId, SERVICE_INCIDENT_TYPE::TRAFFIC_JAM, SERVICE_ACTION_TYPE::SAVE);
 }
 
 void AlarmModule::BlinkGreenLed() {
@@ -278,48 +278,94 @@ void AlarmModule::MeshMessageReceivedHandler(BaseConnection* connection,
 					== AlarmModuleTriggerActionMessages::SET_ALARM_SYSTEM_UPDATE) {
 				logt("CONFIG", "Received Alarm Update SET Request");
 
-				if(CheckForIncidentUpdate(data->meshDeviceId, data->meshIncidentType, data->meshActionType)) {
+				// If incident got updated, broadcast to mesh and to all other devices
+				if(UpdateSavedIncident(data->meshDeviceId, data->meshIncidentType, data->meshActionType)) {
 					BroadcastAlarmUpdatePacket(data->meshDeviceId, (SERVICE_INCIDENT_TYPE)data->meshIncidentType, (SERVICE_ACTION_TYPE)data->meshActionType);
+					BroadcastPenguinAdvertisingPacket();
 				}
 			}
 		}
 	}
 }
-;
-
-/**
- * CheckForIncidentUpdate, checks if an incoming incident updates an existing one
+/* UpdateSavedIncident, updates a saved incident, if it is relevant
  *
  * @param u8 incidentNodeId, the id of the node where an incident happened / vanished
  * @param u8 incidentType, the type of incident, one of SERVICE_INCIDENT_TYPE
  * @param u8 actionType, the action type, one of SERVICE_ACTION_TYPE
  *
- * returns bool changed, true if existing incident got updated, false if not
+ * returns bool changed, true if saved incident got updated, false if not
  */
-bool AlarmModule::CheckForIncidentUpdate(u8 incidentNodeId, u8 incidentType, u8 actionType) {
+bool AlarmModule::UpdateSavedIncident(u8 incidentNodeId, u8 incidentType, u8 actionType) {
 	bool changed = false;
 	SERVICE_INCIDENT_TYPE incType = (SERVICE_INCIDENT_TYPE)incidentType;
 	SERVICE_ACTION_TYPE actType = (SERVICE_ACTION_TYPE)actionType;
-	u8 * savedIncidentId = 0;
+
+	// Rescue lane differs from other two incident types because the threat is behind us
 	if(incType == RESCUE_LANE) {
-		savedIncidentId = &nearestRescueLaneNodeId;
-	} else if(incType == TRAFFIC_JAM) {
-		savedIncidentId = &nearestTrafficJamNodeId;
-	} else if(incType == BLACK_ICE) {
-		savedIncidentId = &nearestBlackIceNodeId;
+		if(nearestRescueLaneNodeId == incidentNodeId && actType == DELETE) {
+			nearestRescueLaneNodeId = 0;
+			changed = true;
+		} else if(nearestRescueLaneNodeId != incidentNodeId && actType == SAVE) {
+			// for relevance -> check if incident id is on same road side
+			if((incidentNodeId - GS->node.configuration.nodeId) % 2 == 0) {
+				// road side with uneven numbers
+				if(GS->node.configuration.nodeId % 2 != 0) {
+					// on uneven side driving direction is 1 -> 3 -> 5 ...
+					// only new incident with an id bigger than the current saved incident id, but not bigger than our id (ahead of us) are relevant
+					if(incidentNodeId > nearestRescueLaneNodeId && incidentNodeId < GS->node.configuration.nodeId) {
+						nearestRescueLaneNodeId = incidentNodeId;
+						changed = true;
+					}
+				// road side with even numbers
+				} else {
+					// on even side driving direction is 6 -> 4 -> 2 ...
+					// only new incident with an id smaller than the current saved incident id, but not smaller than our id (ahead of us) are relevant
+					// if nearestRescueLaneNodeId is 0, there is no saved incident yet, which means we only have to check if it is behind us
+					if((incidentNodeId < nearestRescueLaneNodeId || nearestRescueLaneNodeId == 0) && incidentNodeId > GS->node.configuration.nodeId) {
+						nearestRescueLaneNodeId = incidentNodeId;
+						changed = true;
+					}
+				}
+			}
+		}
+	// The logic of the other two incident types can be put together because the threat is ahead of us
+	} else {
+		// create a generic pointer to the incidentId
+		u8 * savedIncidentNodeId = 0;
+		if(incType == TRAFFIC_JAM) {
+			savedIncidentNodeId = &nearestTrafficJamNodeId;
+		} else if(incType == BLACK_ICE) {
+			savedIncidentNodeId = &nearestBlackIceNodeId;
+		}
+
+		if(*savedIncidentNodeId == incidentNodeId && actType == DELETE) {
+			*savedIncidentNodeId = 0;
+			changed = true;
+		} else if(*savedIncidentNodeId != incidentNodeId && actType == SAVE) {
+			// for relevance -> check if incident id is on same road side
+			if((incidentNodeId - GS->node.configuration.nodeId) % 2 == 0) {
+				// road side with uneven numbers
+				if(GS->node.configuration.nodeId % 2 != 0) {
+					// on uneven side driving direction is 1 -> 3 -> 5 ...
+					// only new incident with an id smaller than the current saved incident id, but not smaller than our id (behind us) are relevant
+					// if savedIncidentNodeId is 0, there is no saved incident yet, which means we only have to check if it is ahead of us
+					if((incidentNodeId < *savedIncidentNodeId || *savedIncidentNodeId == 0) && incidentNodeId > GS->node.configuration.nodeId) {
+						*savedIncidentNodeId = incidentNodeId;
+						changed = true;
+					}
+				// road side with even numbers
+				} else {
+					// on even side driving direction is 6 -> 4 -> 2 ...
+					// only new incident with an id bigger than the current saved incident id, but not bigger than our id (behind us) are relevant
+					if(incidentNodeId > *savedIncidentNodeId && incidentNodeId < GS->node.configuration.nodeId ) {
+						*savedIncidentNodeId = incidentNodeId;
+						changed = true;
+					}
+				}
+			}
+		}
 	}
 
-	if(*savedIncidentId == incidentNodeId) {
-		if(actType == DELETE) {
-			*savedIncidentId = 0;
-			changed = true;
-		}
-	} else {
-		if(actType == SAVE) {
-			*savedIncidentId = incidentNodeId;
-			changed = true;
-		}
-	}
 	return changed;
 }
 
