@@ -79,7 +79,7 @@ typedef struct {
  
     //3 byte car information (Können/sollten auch nur als Bits gesetzt werden)
     u8 deviceType; // Car, bicycle, pedestrian
-	u8 direction; // 1 = North, 2 = East, 12 = NorthEast etc-
+	u8 direction; // 1 = North / 4 = East / 2-3 = NorthEast etc.
 	u8 isEmergency;
     u8 isSlippery;
 }AdvPacketCarData;
