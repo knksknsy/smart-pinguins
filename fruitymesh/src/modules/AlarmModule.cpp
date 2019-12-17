@@ -212,6 +212,7 @@ void AlarmModule::BroadcastPenguinAdvertisingPacket() {
 
 	alarmData->nodeId = GS->node.configuration.nodeId;
 	alarmData->txPower = Boardconfig->calibratedTX;
+	alarmData->nearestRescueLaneNodeId = 151;
 
 	//logt("ALARM_SYSTEM", "txPower: %u", Boardconfig->calibratedTX);
 
@@ -390,103 +391,42 @@ void AlarmModule::GapAdvertisementReportEventHandler(const GapAdvertisementRepor
 {
 	if (!configuration.moduleActive) return;
 
-#if IS_INACTIVE(GW_SAVE_SPACE)
-	HandleAssetV2Packets(advertisementReportEvent);
-#endif
-}
-
-#define _______________________ASSET_V2______________________
-
-#if IS_INACTIVE(GW_SAVE_SPACE)
-//This function checks whether we received an assetV2 packet
-void AlarmModule::HandleAssetV2Packets(const GapAdvertisementReportEvent& advertisementReportEvent)
-{
 	const advPacketServiceAndDataHeader* packet = (const advPacketServiceAndDataHeader*)advertisementReportEvent.getData();
 	const advPacketAssetServiceData* assetPacket = (const advPacketAssetServiceData*)&packet->data;
 
-	//Check if the advertising packet is an asset packet
-	if (
-			advertisementReportEvent.getDataLength() >= SIZEOF_ADV_STRUCTURE_ASSET_SERVICE_DATA
-			&& packet->flags.len == SIZEOF_ADV_STRUCTURE_FLAGS-1
-			&& packet->uuid.len == SIZEOF_ADV_STRUCTURE_UUID16-1
-			&& packet->data.type == BLE_GAP_AD_TYPE_SERVICE_DATA
-			&& packet->data.uuid == SERVICE_DATA_SERVICE_UUID16
-			&& packet->data.messageType == SERVICE_DATA_MESSAGE_TYPE_ASSET
-	){
-		char serial[6];
-		Utility::GenerateBeaconSerialForIndex(assetPacket->serialNumberIndex, serial);
-		logt("SCANMOD", "RX ASSETV2 ADV: serial %s, pressure %u, speed %u, temp %u, humid %u, cn %u, rssi %d",
-				serial,
-				assetPacket->pressure,
-				assetPacket->speed,
-				assetPacket->temperature,
-				assetPacket->humidity,
-				assetPacket->advertisingChannel,
-				advertisementReportEvent.getRssi());
+	// FIXME: Filter UUID
+	if (packet->data.uuid == 4503 && packet->uuid.uuid == 4630) {
 
+		logt("CONFIG", "advPacketServiceAndDataHeader:\n");
+		logt("CONFIG", "advStructureFlags:\nlen: %u,\ntype: %u,\nflags: %u\n",
+				packet->flags.len,
+				packet->flags.type,
+				packet->flags.flags
+			);
+		logt("CONFIG", "advStructureUUID16:\nlen: %u,\ntype: %u,\nuuid: %u\n",
+				packet->uuid.len,
+				packet->uuid.type,
+				packet->uuid.uuid
+			);
+		logt("CONFIG", "advStructureServiceDataAndType:\nlen: %u,\ntype: %u,\nuuid: %u,\nmessageType: %u",
+				packet->data.len,
+				packet->data.type,
+				packet->data.uuid,
+				packet->data.messageType
+			);
+		logt("CONFIG", "\n--------------------\n");
 
-		//Adds the asset packet to our buffer
-		addTrackedAsset(assetPacket, advertisementReportEvent.getRssi());
-
+		logt("CONFIG", "advPacketAssetServiceData:\nmway_servicedata: %u,\nlen: %u,\ntype: %u,\nmessageType: %u,\nadvChannel: %u,\ndeviceType: %u,\ndirection: %u,\nisEmergency: %u,\nisSlippery: %u",
+				assetPacket->mway_servicedata,
+				assetPacket->len,
+				assetPacket->type,
+				assetPacket->messageType,
+				assetPacket->advChannel,
+				assetPacket->deviceType,
+				assetPacket->direction,
+				assetPacket->isEmergency,
+				assetPacket->isSlippery
+			);
+		logt("CONFIG", "\n--------------------\n");
 	}
 }
-
-/**
- * Finds a free slot in our buffer of asset packets and adds the packet
- */
-bool AlarmModule::addTrackedAsset(const advPacketAssetServiceData* packet, i8 rssi){
-	if(packet->serialNumberIndex == 0) return false;
-
-	rssi = -rssi; //Make rssi positive
-
-	if(rssi < 10 || rssi > 90) return false; //filter out wrong rssis
-
-	scannedAssetTrackingPacket* slot = nullptr;
-
-	//Look for an old entry of this asset or a free space
-	//Because we fill this buffer from the beginning, we can use the first slot that is empty
-	for(int i = 0; i<ASSET_PACKET_BUFFER_SIZE; i++){
-		if(assetPackets[i].serialNumberIndex == packet->serialNumberIndex || assetPackets[i].serialNumberIndex == 0){
-			slot = &assetPackets[i];
-			break;
-		}
-	}
-
-	//If a slot was found, add the packet
-	if(slot != nullptr){
-		u16 slotNum = ((u32)slot - (u32)assetPackets.getRaw()) / sizeof(scannedAssetTrackingPacket);
-		logt("SCANMOD", "Tracked packet %u in slot %d", packet->serialNumberIndex, slotNum);
-
-		//Clean up first, if we overwrite another assetId
-		if(slot->serialNumberIndex != packet->serialNumberIndex){
-			slot->serialNumberIndex = packet->serialNumberIndex;
-			slot->count = 0;
-			slot->rssi37 = slot->rssi38 = slot->rssi39 = UINT8_MAX;
-		}
-		//If the count is at its max, we reset the rssi
-		if(slot->count == UINT8_MAX){
-			slot->count = 0;
-			slot->rssi37 = slot->rssi38 = slot->rssi39 = UINT8_MAX;
-		}
-
-		slot->serialNumberIndex = packet->serialNumberIndex;
-		slot->count++;
-		//Channel 0 means that we have no channel data, add it to all rssi channels
-		if(packet->advertisingChannel == 0 && rssi < slot->rssi37){
-			slot->rssi37 = (u16) rssi;
-			slot->rssi38 = (u16) rssi;
-			slot->rssi39 = (u16) rssi;
-		}
-		if(packet->advertisingChannel == 1 && rssi < slot->rssi37) slot->rssi37 = (u16) rssi;
-		if(packet->advertisingChannel == 2 && rssi < slot->rssi38) slot->rssi38 = (u16) rssi;
-		if(packet->advertisingChannel == 3 && rssi < slot->rssi39) slot->rssi39 = (u16) rssi;
-		slot->direction = packet->direction;
-		slot->pressure = packet->pressure;
-		slot->speed = packet->speed;
-
-		return true;
-	}
-	return false;
-}
-#endif
-

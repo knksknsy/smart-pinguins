@@ -68,7 +68,7 @@ AssetModule::AssetModule() :
 void AssetModule::ResetToDefaultConfiguration() {
 	//Set default configuration values
 	configuration.moduleId = moduleId;
-	configuration.moduleActive = true;
+	configuration.moduleActive = false;
 	configuration.moduleVersion = 1;
 
 	//Set additional config values...
@@ -160,42 +160,14 @@ void AssetModule::BroadcastAssetAdvertisingPacket(u16 advIntervalMs) {
 					+ SIZEOF_ADV_STRUCTURE_FLAGS + SIZEOF_ADV_STRUCTURE_UUID16);
 	serviceData->len = SIZEOF_ADV_STRUCTURE_ASSET_SERVICE_DATA - 1;
 	serviceData->type = BLE_GAP_AD_TYPE_SERVICE_DATA;
-	serviceData->uuid = SERVICE_DATA_SERVICE_UUID16;
 	serviceData->messageType = SERVICE_DATA_MESSAGE_TYPE_ASSET;
-
-	//serviceData->serialNumberIndex = RamConfig->serialNumberIndex;
-
-	serviceData->advertisingChannel = currentAdvChannel + 1;
-
-//FIXME: Use proper values
-	serviceData->magnetometerAvailable = false;
-	serviceData->gyroscopeAvailable = false;
-
-	serviceData->batteryPower = 1; //FIXME: Use correct value, only measure frome time to time
-
-	serviceData->speed = 0xFF; //Not available
-
-	logt("ASMOD", "speed after %u", serviceData->speed);
 
 	serviceData->direction = 0xFF; //TODO: Fill with other values
 
 	if (configuration.enableBarometer && Boardconfig->spiM0SSBmePin != -1) {
 #ifdef NRF52
-
-		serviceData->pressure = (u16) lastPressureReading;
-		serviceData->temperature = (i8) lastTemperatureReading;
-		serviceData->humidity = (u8) lastHumidityReading; //TODO: Check if u8 is enough
 #endif
-	} else {
-		serviceData->pressure = 0xFFFF;
-		serviceData->temperature = 0xFF;
-		serviceData->humidity = 0xFF;
 	}
-
-	logt("ASMOD", "channel %u, velocity %u, pressure: %d", currentAdvChannel,
-			serviceData->speed, serviceData->pressure);
-
-//
 	if (ASSET_MODULE_ENCRYPT_ADV_DATA) {
 		//TODO: Generate keystream from asset key and current timer value (divided so it changes all 10 seconds e.g.)
 
@@ -206,7 +178,7 @@ void AssetModule::BroadcastAssetAdvertisingPacket(u16 advIntervalMs) {
 			+ SIZEOF_ADV_STRUCTURE_ASSET_SERVICE_DATA;
 	job.advDataLength = length;
 
-//Either update the job or create it if not done
+	//Either update the job or create it if not done
 	if (assetJobHandle == NULL) {
 		assetJobHandle = GS->advertisingController.AddJob(job);
 	} else {

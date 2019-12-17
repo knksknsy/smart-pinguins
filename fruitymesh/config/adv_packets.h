@@ -208,34 +208,21 @@ STATIC_ASSERT_SIZE(advPacketFlood, 31);
 #pragma pack(1)
 
 //Service Data (max. 24 byte)
-#define SIZEOF_ADV_STRUCTURE_ASSET_SERVICE_DATA 24
+#define SIZEOF_ADV_STRUCTURE_ASSET_SERVICE_DATA 11
 typedef struct
 {
 	//6 byte header
-	u8 len;
-	u8 type;
-	u16 uuid;
-	u16 messageType; //0x02 for Asset Service
+    u16 mway_servicedata;
+    u8 len;  
+    u8 type; 
+    u16 messageType;
 
-	//1 byte capabilities
-	u8 advertisingChannel : 2; // 0 = not available, 1=37, 2=38, 3=39
-	u8 gyroscopeAvailable : 1;
-	u8 magnetometerAvailable : 1;
-	u8 reservedBit : 4;
-
-	//11 byte assetData
-	u32 serialNumberIndex;
-	u8 batteryPower; //0xFF = not available
-	u8 speed; //0xFF = not available
-	u8 direction; //0xFF = not available
-	u16 pressure; //0xFFFF = not available
-	i8 temperature; //0xFF = not available
-	u8 humidity; //0xFF = not available
-
-	u16 reserved;
-
-	u32 encryptionMIC;
-
+    //5 byte car information (Können/sollten auch nur als Bits gesetzt werden)
+    u8 advChannel; //Wird entfernt
+    u8 deviceType; //Car / bicycle / pederstiant
+    u8 direction; //1= North / 4=East / 2-3 = NorthEast etc.
+    u8 isEmergency;
+    u8 isSlippery;
 
 }advPacketAssetServiceData;
 STATIC_ASSERT_SIZE(advPacketAssetServiceData, SIZEOF_ADV_STRUCTURE_ASSET_SERVICE_DATA);

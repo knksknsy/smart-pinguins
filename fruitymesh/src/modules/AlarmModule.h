@@ -146,9 +146,6 @@ private:
 	u8 nearestBlackIceNodeId;
 	u8 nearestRescueLaneNodeId;
 
-	void HandleAssetV2Packets(const GapAdvertisementReportEvent& advertisementReportEvent);
-	bool addTrackedAsset(const advPacketAssetServiceData* packet, i8 rssi);
-
 	AlarmModuleConfiguration configuration;
 	AdvJob* alarmJobHandle;
 	u8 currentAdvChannel;

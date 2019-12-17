@@ -64,7 +64,7 @@ void setFeaturesetConfiguration_github(ModuleConfiguration* config, void* module
 		// network id has to be the same for all devices
 		c->networkId = 11;
 		// nodeId to use for the devices to flash
-		// c->nodeId = 3;
+		c->nodeId = 151;
 		CheckedMemset(c->networkKey, 0x00, 16);
 	}
 }
