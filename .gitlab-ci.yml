@@ -18,4 +18,4 @@ build-test:
     when: always
     expire_in: 7d
     paths:
-      - "${CI_PROJECT_DIR}/fruitymesh/_build/smart_penguins.bin"
+      - "${CI_PROJECT_DIR}/fruitymesh/_build/release/NRF52/github/FruityMesh.out"
