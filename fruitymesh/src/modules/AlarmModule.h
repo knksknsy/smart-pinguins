@@ -26,7 +26,7 @@
 
 
 #include <AdvertisingController.h>
-#include <BoardConfig.h>
+#include <Boardconfig.h>
 #include "vector"
 
 #define SIZEOF_ALARM_MODULE_UPDATE_MESSAGE 5
