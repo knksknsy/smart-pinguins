@@ -1,18 +1,12 @@
 image: knksknsy/docker-nrf5
 
-stages:
-  - sdk-test
-  - build-text
-
 sdk-test:
-  stage: sdk-test
   script:
     - cd ${CI_PROJECT_DIR}/tests
     - chmod +x sdk-test.sh
     - ./sdk-test.sh
 
-build-test:   
-  stage: sdk-test
+build-test:
   script:
     - cd ${CI_PROJECT_DIR}/fruitymesh
     - make ENV=docker
