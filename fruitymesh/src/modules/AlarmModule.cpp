@@ -70,7 +70,7 @@ AlarmModule::AlarmModule() :
 
 void AlarmModule::ButtonHandler(u8 buttonId, u32 holdTimeDs) {
 	//Send alarm update message
-	logt("CONFIG", "Button pressed %u. Pressed time: %u", buttonId, holdTimeDs);
+	logt("ALRAMMOD", "Button pressed %u. Pressed time: %u", buttonId, holdTimeDs);
 
 	BlinkGreenLed();
 	UpdateGpioState();
@@ -90,7 +90,7 @@ void AlarmModule::ConfigurationLoadedHandler() {
 #if IS_INACTIVE(GW_SAVE_SPACE)
 
 #endif
-	logt("CONFIG", "AlarmModule Config Loaded");
+	logt("ALRAMMOD", "AlarmModule Config Loaded");
 
 }
 
@@ -231,7 +231,7 @@ void AlarmModule::BroadcastPenguinAdvertisingPacket() {
 	}
 	char cbuffer[100];
 
-	logt("CONFIG", "Broadcasting asset data %s, len %u", cbuffer, length);
+	logt("ALRAMMOD", "Broadcasting asset data %s, len %u", cbuffer, length);
 
 }
 
@@ -256,14 +256,14 @@ void AlarmModule::MeshMessageReceivedHandler(BaseConnection* connection,
 
 	//Check if this request is meant for modules in general
 	if (packetHeader->messageType == MessageType::MODULE_TRIGGER_ACTION) {
-		logt("CONFIG", "Received Alarm Update Request");
+		logt("ALRAMMOD", "Received Alarm Update Request");
 		connPacketModule* packet = (connPacketModule*) packetHeader;
 
 		//Check if our module is meant and we should trigger an action
 		if (packet->moduleId == moduleId) {
 			if (packet->actionType
 					== AlarmModuleTriggerActionMessages::GET_ALARM_SYSTEM_UPDATE) {
-				logt("CONFIG", "Received Alarm Update GET Request");
+				logt("ALRAMMOD", "Received Alarm Update GET Request");
 				// For each incident, check if there is a saved one and if there is, broadcast it out
 				if(nearestTrafficJamNodeId != 0) {
 					BroadcastAlarmUpdatePacket(nearestTrafficJamNodeId, SERVICE_INCIDENT_TYPE::TRAFFIC_JAM, SERVICE_ACTION_TYPE::SAVE);
@@ -277,7 +277,7 @@ void AlarmModule::MeshMessageReceivedHandler(BaseConnection* connection,
 			}
 			if (packet->actionType
 					== AlarmModuleTriggerActionMessages::SET_ALARM_SYSTEM_UPDATE) {
-				logt("CONFIG", "Received Alarm Update SET Request");
+				logt("ALRAMMOD", "Received Alarm Update SET Request");
 
 				// If incident got updated, broadcast to mesh and to all other devices
 				if(UpdateSavedIncident(data->meshDeviceId, data->meshIncidentType, data->meshActionType)) {
@@ -397,26 +397,26 @@ void AlarmModule::GapAdvertisementReportEventHandler(const GapAdvertisementRepor
 	// FIXME: Filter UUID
 	if (packet->data.uuid == 4503 && packet->uuid.uuid == 4630) {
 
-		logt("CONFIG", "advPacketServiceAndDataHeader:\n");
-		logt("CONFIG", "advStructureFlags:\nlen: %u,\ntype: %u,\nflags: %u\n",
+		logt("ALRAMMOD", "advPacketServiceAndDataHeader:\n");
+		logt("ALRAMMOD", "advStructureFlags:\nlen: %u,\ntype: %u,\nflags: %u\n",
 				packet->flags.len,
 				packet->flags.type,
 				packet->flags.flags
 			);
-		logt("CONFIG", "advStructureUUID16:\nlen: %u,\ntype: %u,\nuuid: %u\n",
+		logt("ALRAMMOD", "advStructureUUID16:\nlen: %u,\ntype: %u,\nuuid: %u\n",
 				packet->uuid.len,
 				packet->uuid.type,
 				packet->uuid.uuid
 			);
-		logt("CONFIG", "advStructureServiceDataAndType:\nlen: %u,\ntype: %u,\nuuid: %u,\nmessageType: %u",
+		logt("ALRAMMOD", "advStructureServiceDataAndType:\nlen: %u,\ntype: %u,\nuuid: %u,\nmessageType: %u",
 				packet->data.len,
 				packet->data.type,
 				packet->data.uuid,
 				packet->data.messageType
 			);
-		logt("CONFIG", "\n--------------------\n");
+		logt("ALRAMMOD", "\n--------------------\n");
 
-		logt("CONFIG", "advPacketAssetServiceData:\nmway_servicedata: %u,\nlen: %u,\ntype: %u,\nmessageType: %u,\nadvChannel: %u,\ndeviceType: %u,\ndirection: %u,\nisEmergency: %u,\nisSlippery: %u",
+		logt("ALRAMMOD", "advPacketAssetServiceData:\nmway_servicedata: %u,\nlen: %u,\ntype: %u,\nmessageType: %u,\nadvChannel: %u,\ndeviceType: %u,\ndirection: %u,\nisEmergency: %u,\nisSlippery: %u",
 				assetPacket->mway_servicedata,
 				assetPacket->len,
 				assetPacket->type,
@@ -427,6 +427,6 @@ void AlarmModule::GapAdvertisementReportEventHandler(const GapAdvertisementRepor
 				assetPacket->isEmergency,
 				assetPacket->isSlippery
 			);
-		logt("CONFIG", "\n--------------------\n");
+		logt("ALRAMMOD", "\n--------------------\n");
 	}
 }
