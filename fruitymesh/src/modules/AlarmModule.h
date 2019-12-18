@@ -31,12 +31,6 @@
 
 #define SIZEOF_ALARM_MODULE_UPDATE_MESSAGE 5
 
-typedef struct {
-	u8 meshDeviceId; // node id
-	u8 meshIncidentType; // type of incident, e.g traffic jam, one of SERVICE_INCIDENT_TYPE
-	u8 meshActionType; // incident type action, e.g SAVE or DELETE, one of SERVICE_ACTION_TYPE
-}AlarmModuleUpdateMessage;
-
 #define SERVICE_DATA_MESSAGE_TYPE_ALARM 25
 #define SERVICE_TYPE_ALARM_UPDATE 33
 #define ALARM_MODULE_BROADCAST_TRIGGER_TIME 300
@@ -44,6 +38,7 @@ typedef struct {
 
 //Service Data (max. 24 byte)
 #define SIZEOF_ADV_STRUCTURE_ALARM_SERVICE_DATA 22 //ToDo
+// Message from Mesh to Car
 typedef struct {
 	//6 byte header
     u8 len;  
@@ -63,12 +58,23 @@ typedef struct {
     u8 clusterSize;
     u8 networkId; //Nur für Debugging
  
-    //3 Byte Penguin Information
+    //6 Byte Penguin Information
 	u8 nearestTrafficJamNodeId;
 	u8 nearestBlackIceNodeId;
 	u8 nearestRescueLaneNodeId;
+	u8 nearestTrafficJamOppositeLaneNodeId;
+	u8 nearestBlackIceOppositeLaneNodeId;
+	u8 nearestRescueLaneOppositeLaneNodeId;
 }AdvPacketPenguinData;
 
+// Message from Mesh to Mesh
+typedef struct {
+	u8 meshDeviceId; // node id
+	u8 meshIncidentType; // type of incident, e.g traffic jam, one of SERVICE_INCIDENT_TYPE
+	u8 meshActionType; // incident type action, e.g SAVE or DELETE, one of SERVICE_ACTION_TYPE
+}AlarmModuleUpdateMessage;
+
+// Message from Car to Mesh
 typedef struct {
 	u16 mway_servicedata;
     //6 byte header
@@ -145,6 +151,9 @@ private:
 	u8 nearestTrafficJamNodeId;
 	u8 nearestBlackIceNodeId;
 	u8 nearestRescueLaneNodeId;
+	u8 nearestTrafficJamOppositeLaneNodeId;
+	u8 nearestBlackIceOppositeLaneNodeId;
+	u8 nearestRescueLaneOppositeLaneNodeId;
 
 	AlarmModuleConfiguration configuration;
 	AdvJob* alarmJobHandle;
