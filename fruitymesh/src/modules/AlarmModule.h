@@ -70,14 +70,14 @@ typedef struct {
 }AdvPacketPenguinData;
 
 typedef struct {
-	u16 mway_servicedata;
     //6 byte header
+	u16 mway_servicedata;
     u8 len;  
     u8 type; 
-    u16 uuid;
     u16 messageType;
  
-    //3 byte car information (Können/sollten auch nur als Bits gesetzt werden)
+    //5 byte car information (Können/sollten auch nur als Bits gesetzt werden)
+	u8 advChannel; //Wird entfernt
     u8 deviceType; // Car, bicycle, pedestrian
 	u8 direction; // 1 = North / 4 = East / 2-3 = NorthEast etc.
 	u8 isEmergency;
