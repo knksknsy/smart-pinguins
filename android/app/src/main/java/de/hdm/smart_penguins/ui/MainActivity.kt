@@ -5,7 +5,6 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
-import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import de.hdm.smart_penguins.R
@@ -26,7 +25,6 @@ class MainActivity : BaseActivity() {
                 R.id.navigation_map
             )
         )
-        setupActionBarWithNavController(navController, appBarConfiguration)
         navView.setupWithNavController(navController)
     }
 

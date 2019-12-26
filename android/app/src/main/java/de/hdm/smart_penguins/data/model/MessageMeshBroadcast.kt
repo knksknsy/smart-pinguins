@@ -10,9 +10,7 @@ class MessageMeshBroadcast(bytes: ByteArray) {
     var type = parser.readSwappedUnsignedByte(bytes)
     val mUuid = parser.readSwappedUnsignedShort(bytes)
     val messageType = parser.readSwappedUnsignedShort(bytes)
-    val advChannel = parser.readSwappedUnsignedByte(bytes)
     val deviceNumber = parser.readSwappedUnsignedByte(bytes)
-    val txPower = parser.readSwappedUnsignedByte(bytes)
     val boardType = getTypeForInt(parser.readSwappedByte(bytes))
     val currentClusterSize = parser.readSwappedUnsignedByte(bytes)
     val clusterSize = parser.readSwappedUnsignedByte(bytes)
@@ -21,7 +19,5 @@ class MessageMeshBroadcast(bytes: ByteArray) {
     val nearestBlackIceNodeId = parser.readSwappedUnsignedByte(bytes)
     val nearestRescueLaneNodeId = parser.readSwappedUnsignedByte(bytes)
     val direction = parser.readSwappedUnsignedByte(bytes)
-
-
 }
 

@@ -12,6 +12,7 @@ import android.view.ViewGroup
 import androidx.annotation.DrawableRes
 import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -21,17 +22,24 @@ import com.google.android.gms.maps.model.*
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import de.hdm.smart_penguins.R
 import de.hdm.smart_penguins.SmartApplication
+import de.hdm.smart_penguins.component.BleNodesLiveData
 import de.hdm.smart_penguins.data.Constants
+import de.hdm.smart_penguins.data.manager.ConnectionManager
 import de.hdm.smart_penguins.data.manager.DataManager
+import de.hdm.smart_penguins.data.model.PersistentNode
 import de.hdm.smart_penguins.ui.QrScannerActivity
 import de.hdm.smart_penguins.ui.adapter.MapListAdapter
 import kotlinx.android.synthetic.main.bottomsheet_layout.*
 import kotlinx.android.synthetic.main.fragment_map.*
 import javax.inject.Inject
 
-class MapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnCameraMoveListener {
+class MapFragment : Fragment(), OnMapReadyCallback {
+    @Inject
+    lateinit var nodesLiveData: BleNodesLiveData
     @Inject
     lateinit var dataManager: DataManager
+    @Inject
+    lateinit var connectionManager: ConnectionManager
     private var adapter: MapListAdapter? = null
 
     private var gMap: GoogleMap? = null
@@ -65,6 +73,7 @@ class MapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnCameraMoveListen
             startActivity(intent);
         }
         setBeaconList()
+
     }
 
     private fun expandBottomSheet() {
@@ -81,14 +90,21 @@ class MapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnCameraMoveListen
         adapter?.update(dataManager.qrScannedNodes)
     }
 
-    private fun setMarker(placedBeaconType: Int, point: LatLng) {
 
+    private fun setNodes() {
+        if (gMap != null) {
+            gMap!!.clear()
+            gMap!!.setMapStyle(MapStyleOptions.loadRawResourceStyle(context, R.raw.map_style))
+            gMap!!.isBuildingsEnabled = false
+            for (node: PersistentNode in dataManager.qrScannedNodes) {
+                gMap!!.addMarker(createMarkerOptions(node))
+            }
+        }
     }
 
+    fun createMarkerOptions(node: PersistentNode): MarkerOptions {
 
-    fun createMarkerOptions(): MarkerOptions {
-
-        val markerOptions = MarkerOptions().position(LatLng(1.2, 2.2))
+        val markerOptions = MarkerOptions().position(LatLng(node.lat, node.lng))
         val bitmap = vectorToBitmap(
             R.drawable.common_google_signin_btn_icon_dark
         )
@@ -111,9 +127,9 @@ class MapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnCameraMoveListen
     }
 
 
-    private fun setPosition() {
+    private fun setPosition(node: PersistentNode) {
 
-        val markerOptions = MarkerOptions().position(LatLng(1.1, 1.1))
+        val markerOptions = MarkerOptions().position(LatLng(node.lat, node.lng))
         val bitmap = vectorToBitmap(R.drawable.ic_home_black_24dp)
 
         markerOptions.icon(bitmap)
@@ -168,15 +184,27 @@ class MapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnCameraMoveListen
     override fun onMapReady(googleMap: GoogleMap) {
         if (gMap == null) {
             gMap = googleMap
-            gMap!!.setMapStyle(MapStyleOptions.loadRawResourceStyle(context, R.raw.map_style))
-            gMap!!.isBuildingsEnabled = false
+
             // zoom to our floor
             val mway = if (setupMode) LatLng(
                 Constants.PARAM_COORD_MWAY_LAT_SETUP,
                 Constants.PARAM_COORD_MWAY_LNG_SETUP
             ) else LatLng(Constants.PARAM_COORD_MWAY_LAT, Constants.PARAM_COORD_MWAY_LNG)
             gMap!!.animateCamera(CameraUpdateFactory.newLatLngZoom(mway, 19f))
-            gMap!!.setOnCameraMoveListener(this@MapFragment)
+            setNodes()
+
+            nodesLiveData.observe(this, Observer { data ->
+                if (data.size > 0) {
+                    val positionNode = dataManager.qrScannedNodes.stream()
+                        .filter { node ->
+                            node.nodeID == data[0].messageMeshAccessBroadcast?.deviceNumber?.toLong()
+                        }.findFirst()
+                    if(positionNode.isPresent){
+                        setPosition(positionNode.get())
+                    }
+                }
+            })
+
         }
     }
 
@@ -193,11 +221,11 @@ class MapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnCameraMoveListen
         super.onPause()
         mapFragment?.onPause()
         positionMarker == null
-    }
+        nodesLiveData.removeObservers(this)
 
-    override fun onCameraMove() {
     }
 
     fun getMyApplication(): SmartApplication =
         this.requireActivity().application as SmartApplication
+
 }
