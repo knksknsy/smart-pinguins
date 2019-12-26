@@ -208,14 +208,54 @@ STATIC_ASSERT_SIZE(advPacketFlood, 31);
 #pragma pack(1)
 
 //Service Data (max. 24 byte)
-#define SIZEOF_ADV_STRUCTURE_ASSET_SERVICE_DATA 11
+#define SIZEOF_ADV_STRUCTURE_ASSET_SERVICE_DATA 24
 typedef struct
 {
 	//6 byte header
-    u16 mway_servicedata;
+	u8 len;
+	u8 type;
+	u16 uuid;
+	u16 messageType; //0x02 for Asset Service
+
+	//1 byte capabilities
+	u8 advertisingChannel : 2; // 0 = not available, 1=37, 2=38, 3=39
+	u8 gyroscopeAvailable : 1;
+	u8 magnetometerAvailable : 1;
+	u8 reservedBit : 4;
+
+	//11 byte assetData
+	u32 serialNumberIndex;
+	u8 batteryPower; //0xFF = not available
+	u8 speed; //0xFF = not available
+	u8 direction; //0xFF = not available
+	u16 pressure; //0xFFFF = not available
+	i8 temperature; //0xFF = not available
+	u8 humidity; //0xFF = not available
+
+	u16 reserved;
+
+	u32 encryptionMIC;
+
+}advPacketAssetServiceData;
+STATIC_ASSERT_SIZE(advPacketAssetServiceData, SIZEOF_ADV_STRUCTURE_ASSET_SERVICE_DATA);
+
+#pragma pack(pop)
+
+//####### AdvPacketCarData Tracking #################################################
+#define SERVICE_DATA_MESSAGE_TYPE_CAR 0x03
+
+#pragma pack(push)
+#pragma pack(1)
+
+//Service Data (max. 24 byte)
+#define SIZEOF_ADV_STRUCTURE_CAR_SERVICE_DATA 11
+typedef struct
+{
+	//6 byte header
+	u16 mway_servicedata;
     u8 len;  
-    u8 type; 
-    u16 messageType;
+    u8 type;
+    u16 messageType; //0x03 for Car Data Service
 
     //5 byte car information (Können/sollten auch nur als Bits gesetzt werden)
     u8 advChannel; //Wird entfernt
@@ -224,8 +264,8 @@ typedef struct
     u8 isEmergency;
     u8 isSlippery;
 
-}advPacketAssetServiceData;
-STATIC_ASSERT_SIZE(advPacketAssetServiceData, SIZEOF_ADV_STRUCTURE_ASSET_SERVICE_DATA);
+}advPacketCarServiceData;
+STATIC_ASSERT_SIZE(advPacketCarServiceData, SIZEOF_ADV_STRUCTURE_CAR_SERVICE_DATA);
 
 #pragma pack(pop)
 

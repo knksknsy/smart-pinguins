@@ -55,6 +55,9 @@ AlarmModule::AlarmModule() :
 	nearestTrafficJamNodeId = 0;
 	nearestBlackIceNodeId = 0;
 	nearestRescueLaneNodeId = 0;
+	nearestTrafficJamOppositeLaneNodeId = 0;
+	nearestBlackIceOppositeLaneNodeId = 0;
+	nearestRescueLaneOppositeLaneNodeId = 0;
 
 	GpioInit();
 
@@ -70,7 +73,7 @@ AlarmModule::AlarmModule() :
 
 void AlarmModule::ButtonHandler(u8 buttonId, u32 holdTimeDs) {
 	//Send alarm update message
-	logt("CONFIG", "Button pressed %u. Pressed time: %u", buttonId, holdTimeDs);
+	logt("ALARMMOD", "Button pressed %u. Pressed time: %u", buttonId, holdTimeDs);
 
 	BlinkGreenLed();
 	UpdateGpioState();
@@ -90,7 +93,7 @@ void AlarmModule::ConfigurationLoadedHandler() {
 #if IS_INACTIVE(GW_SAVE_SPACE)
 
 #endif
-	logt("CONFIG", "AlarmModule Config Loaded");
+	logt("ALARMMOD", "AlarmModule Config Loaded");
 
 }
 
@@ -204,6 +207,9 @@ void AlarmModule::BroadcastPenguinAdvertisingPacket() {
 	alarmData->nearestRescueLaneNodeId = nearestRescueLaneNodeId;
 	alarmData->nearestTrafficJamNodeId = nearestTrafficJamNodeId;
 	alarmData->nearestBlackIceNodeId = nearestBlackIceNodeId;
+	alarmData->nearestRescueLaneOppositeLaneNodeId = nearestRescueLaneOppositeLaneNodeId;
+	alarmData->nearestTrafficJamOppositeLaneNodeId = nearestTrafficJamOppositeLaneNodeId;
+	alarmData->nearestBlackIceOppositeLaneNodeId = nearestBlackIceOppositeLaneNodeId;
 
 	alarmData->advertisingChannel = currentAdvChannel + 1;
 
@@ -212,7 +218,6 @@ void AlarmModule::BroadcastPenguinAdvertisingPacket() {
 
 	alarmData->nodeId = GS->node.configuration.nodeId;
 	alarmData->txPower = Boardconfig->calibratedTX;
-	alarmData->nearestRescueLaneNodeId = 151;
 
 	//logt("ALARM_SYSTEM", "txPower: %u", Boardconfig->calibratedTX);
 
@@ -231,7 +236,7 @@ void AlarmModule::BroadcastPenguinAdvertisingPacket() {
 	}
 	char cbuffer[100];
 
-	logt("CONFIG", "Broadcasting asset data %s, len %u", cbuffer, length);
+	logt("ALARMMOD", "Broadcasting asset data %s, len %u", cbuffer, length);
 
 }
 
@@ -256,14 +261,14 @@ void AlarmModule::MeshMessageReceivedHandler(BaseConnection* connection,
 
 	//Check if this request is meant for modules in general
 	if (packetHeader->messageType == MessageType::MODULE_TRIGGER_ACTION) {
-		logt("CONFIG", "Received Alarm Update Request");
+		logt("ALARMMOD", "Received Alarm Update Request");
 		connPacketModule* packet = (connPacketModule*) packetHeader;
 
 		//Check if our module is meant and we should trigger an action
 		if (packet->moduleId == moduleId) {
 			if (packet->actionType
 					== AlarmModuleTriggerActionMessages::GET_ALARM_SYSTEM_UPDATE) {
-				logt("CONFIG", "Received Alarm Update GET Request");
+				logt("ALARMMOD", "Received Alarm Update GET Request");
 				// For each incident, check if there is a saved one and if there is, broadcast it out
 				if(nearestTrafficJamNodeId != 0) {
 					BroadcastAlarmUpdatePacket(nearestTrafficJamNodeId, SERVICE_INCIDENT_TYPE::TRAFFIC_JAM, SERVICE_ACTION_TYPE::SAVE);
@@ -274,10 +279,19 @@ void AlarmModule::MeshMessageReceivedHandler(BaseConnection* connection,
 				if(nearestRescueLaneNodeId != 0) {
 					BroadcastAlarmUpdatePacket(nearestRescueLaneNodeId, SERVICE_INCIDENT_TYPE::RESCUE_LANE, SERVICE_ACTION_TYPE::SAVE);
 				}
+				if(nearestTrafficJamOppositeLaneNodeId != 0) {
+					BroadcastAlarmUpdatePacket(nearestTrafficJamOppositeLaneNodeId, SERVICE_INCIDENT_TYPE::TRAFFIC_JAM, SERVICE_ACTION_TYPE::SAVE);
+				}
+				if(nearestBlackIceOppositeLaneNodeId != 0) {
+					BroadcastAlarmUpdatePacket(nearestBlackIceOppositeLaneNodeId, SERVICE_INCIDENT_TYPE::BLACK_ICE, SERVICE_ACTION_TYPE::SAVE);
+				}
+				if(nearestRescueLaneOppositeLaneNodeId != 0) {
+					BroadcastAlarmUpdatePacket(nearestRescueLaneOppositeLaneNodeId, SERVICE_INCIDENT_TYPE::RESCUE_LANE, SERVICE_ACTION_TYPE::SAVE);
+				}
 			}
 			if (packet->actionType
 					== AlarmModuleTriggerActionMessages::SET_ALARM_SYSTEM_UPDATE) {
-				logt("CONFIG", "Received Alarm Update SET Request");
+				logt("ALARMMOD", "Received Alarm Update SET Request");
 
 				// If incident got updated, broadcast to mesh and to all other devices
 				if(UpdateSavedIncident(data->meshDeviceId, data->meshIncidentType, data->meshActionType)) {
@@ -301,68 +315,52 @@ bool AlarmModule::UpdateSavedIncident(u8 incidentNodeId, u8 incidentType, u8 act
 	SERVICE_INCIDENT_TYPE incType = (SERVICE_INCIDENT_TYPE)incidentType;
 	SERVICE_ACTION_TYPE actType = (SERVICE_ACTION_TYPE)actionType;
 
-	// Rescue lane differs from other two incident types because the threat is behind us
-	if(incType == RESCUE_LANE) {
-		if(nearestRescueLaneNodeId == incidentNodeId && actType == DELETE) {
-			nearestRescueLaneNodeId = 0;
-			changed = true;
-		} else if(nearestRescueLaneNodeId != incidentNodeId && actType == SAVE) {
-			// for relevance -> check if incident id is on same road side
-			if((incidentNodeId - GS->node.configuration.nodeId) % 2 == 0) {
-				// road side with uneven numbers
-				if(GS->node.configuration.nodeId % 2 != 0) {
-					// on uneven side driving direction is 1 -> 3 -> 5 ...
-					// only new incident with an id bigger than the current saved incident id, but not bigger than our id (ahead of us) are relevant
-					if(incidentNodeId > nearestRescueLaneNodeId && incidentNodeId < GS->node.configuration.nodeId) {
-						nearestRescueLaneNodeId = incidentNodeId;
-						changed = true;
-					}
-				// road side with even numbers
-				} else {
-					// on even side driving direction is 6 -> 4 -> 2 ...
-					// only new incident with an id smaller than the current saved incident id, but not smaller than our id (ahead of us) are relevant
-					// if nearestRescueLaneNodeId is 0, there is no saved incident yet, which means we only have to check if it is behind us
-					if((incidentNodeId < nearestRescueLaneNodeId || nearestRescueLaneNodeId == 0) && incidentNodeId > GS->node.configuration.nodeId) {
-						nearestRescueLaneNodeId = incidentNodeId;
-						changed = true;
-					}
-				}
-			}
-		}
-	// The logic of the other two incident types can be put together because the threat is ahead of us
-	} else {
-		// create a generic pointer to the incidentId
-		u8 * savedIncidentNodeId = 0;
-		if(incType == TRAFFIC_JAM) {
+	// create a generic pointer to the incidentId
+	u8 * savedIncidentNodeId = 0;
+	if(incType == TRAFFIC_JAM) {
+		// check if incident id is on same road side
+		if((incidentNodeId - GS->node.configuration.nodeId) % 2 == 0) {
 			savedIncidentNodeId = &nearestTrafficJamNodeId;
-		} else if(incType == BLACK_ICE) {
-			savedIncidentNodeId = &nearestBlackIceNodeId;
+		} else {
+			savedIncidentNodeId = &nearestTrafficJamOppositeLaneNodeId;
 		}
+	} else if(incType == BLACK_ICE) {
+		if((incidentNodeId - GS->node.configuration.nodeId) % 2 == 0) {
+			savedIncidentNodeId = &nearestBlackIceNodeId;
+		} else {
+			savedIncidentNodeId = &nearestBlackIceOppositeLaneNodeId;
+		}
+	} else if(incType == RESCUE_LANE) {
+		if((incidentNodeId - GS->node.configuration.nodeId) % 2 == 0) {
+			savedIncidentNodeId = &nearestRescueLaneNodeId;
+		} else {
+			savedIncidentNodeId = &nearestRescueLaneOppositeLaneNodeId;
+		}
+	}
 
-		if(*savedIncidentNodeId == incidentNodeId && actType == DELETE) {
-			*savedIncidentNodeId = 0;
-			changed = true;
-		} else if(*savedIncidentNodeId != incidentNodeId && actType == SAVE) {
-			// for relevance -> check if incident id is on same road side
-			if((incidentNodeId - GS->node.configuration.nodeId) % 2 == 0) {
-				// road side with uneven numbers
-				if(GS->node.configuration.nodeId % 2 != 0) {
-					// on uneven side driving direction is 1 -> 3 -> 5 ...
-					// only new incident with an id smaller than the current saved incident id, but not smaller than our id (behind us) are relevant
-					// if savedIncidentNodeId is 0, there is no saved incident yet, which means we only have to check if it is ahead of us
-					if((incidentNodeId < *savedIncidentNodeId || *savedIncidentNodeId == 0) && incidentNodeId > GS->node.configuration.nodeId) {
-						*savedIncidentNodeId = incidentNodeId;
-						changed = true;
-					}
-				// road side with even numbers
-				} else {
-					// on even side driving direction is 6 -> 4 -> 2 ...
-					// only new incident with an id bigger than the current saved incident id, but not bigger than our id (behind us) are relevant
-					if(incidentNodeId > *savedIncidentNodeId && incidentNodeId < GS->node.configuration.nodeId ) {
-						*savedIncidentNodeId = incidentNodeId;
-						changed = true;
-					}
-				}
+	if(*savedIncidentNodeId == incidentNodeId && actType == DELETE) {
+		*savedIncidentNodeId = 0;
+		changed = true;
+	// lane with uneven numbers -> driving direction is 1 -> 3 -> 5 | lane with even numbers, driving direction is 6 -> 4 -> 2 ...
+	} else if(*savedIncidentNodeId != incidentNodeId && actType == SAVE) {
+		// incident happened on lane with uneven numbers and is traffic jam or black ice, or happened on even side and is rescue lane
+		// results in the same logic, because of the driving directions (one up and one down)
+		// and the fact that rescue lane is relevant behind us, while the other are relevant ahead of us
+		if((incidentNodeId % 2 != 0 && (incType == TRAFFIC_JAM || incType == BLACK_ICE)) || (incidentNodeId % 2 == 0 && incType == RESCUE_LANE)) {
+			// ... only new incident with an id smaller than the current saved incident id, but not smaller than our id - 1
+			// ( +1 so beacon on same position on other lane is included) are relevant
+			// if savedIncidentNodeId is 0, there is no saved incident yet, which means we only have to check if it is ahead of us
+			if((incidentNodeId < *savedIncidentNodeId || *savedIncidentNodeId == 0) && incidentNodeId >= GS->node.configuration.nodeId - 1) {
+				*savedIncidentNodeId = incidentNodeId;
+				changed = true;
+			}
+		} else {
+			// ... only new incident with an id bigger than the current saved incident id, but not bigger than our id + 1
+			// ( +1 so beacon on same position on other lane is included) are relevant
+			//  *savedIncidentNodeId == 0 check is not needed here because > comparison always overwrites the 0 case (no saved incident yet)
+			if(incidentNodeId > *savedIncidentNodeId && incidentNodeId <= GS->node.configuration.nodeId + 1) {
+				*savedIncidentNodeId = incidentNodeId;
+				changed = true;
 			}
 		}
 	}
@@ -392,31 +390,47 @@ void AlarmModule::GapAdvertisementReportEventHandler(const GapAdvertisementRepor
 	if (!configuration.moduleActive) return;
 
 	const advPacketServiceAndDataHeader* packet = (const advPacketServiceAndDataHeader*)advertisementReportEvent.getData();
-	const advPacketAssetServiceData* assetPacket = (const advPacketAssetServiceData*)&packet->data;
+	const advPacketCarServiceData* assetPacket = (const advPacketCarServiceData*)&packet->data;
 
 	// FIXME: Filter UUID
 	if (packet->data.uuid == 4503 && packet->uuid.uuid == 4630) {
 
-		logt("CONFIG", "advPacketServiceAndDataHeader:\n");
-		logt("CONFIG", "advStructureFlags:\nlen: %u,\ntype: %u,\nflags: %u\n",
+		const advPacketServiceAndDataHeader header = *packet;
+		unsigned char* rawDataPtr1 = (unsigned char *)&header;
+		u16 size1 = sizeof(header);
+		logt("ALARMMOD", "raw data (advPacketServiceAndDataHeader):\n");
+		while(size1--) {
+			logt("ALARMMOD", "0x%02X", *rawDataPtr1++);
+		}
+		
+		const advPacketCarServiceData data = *assetPacket;
+		unsigned char* rawDataPtr2 = (unsigned char *)&data;
+		u16 size2 = sizeof(data);
+		logt("ALARMMOD", "raw data (advPacketCarServiceData):\n");
+		while(size2--) {
+			logt("ALARMMOD", "0x%02X", *rawDataPtr2++);
+		}
+		
+		logt("ALARMMOD", "advPacketServiceAndDataHeader:\n");
+		logt("ALARMMOD", "advStructureFlags:\nlen: 0x%02X,\ntype: 0x%02X,\nflags: 0x%02X\n",
 				packet->flags.len,
 				packet->flags.type,
 				packet->flags.flags
 			);
-		logt("CONFIG", "advStructureUUID16:\nlen: %u,\ntype: %u,\nuuid: %u\n",
+		logt("ALARMMOD", "advStructureUUID16:\nlen: 0x%02X,\ntype: 0x%02X,\nuuid: 0x%02X\n",
 				packet->uuid.len,
 				packet->uuid.type,
 				packet->uuid.uuid
 			);
-		logt("CONFIG", "advStructureServiceDataAndType:\nlen: %u,\ntype: %u,\nuuid: %u,\nmessageType: %u",
+		logt("ALARMMOD", "advStructureServiceDataAndType:\nlen: 0x%02X,\ntype: 0x%02X,\nuuid: 0x%02X,\nmessageType: 0x%02X",
 				packet->data.len,
 				packet->data.type,
 				packet->data.uuid,
 				packet->data.messageType
 			);
-		logt("CONFIG", "\n--------------------\n");
+		logt("ALARMMOD", "\n--------------------\n");
 
-		logt("CONFIG", "advPacketAssetServiceData:\nmway_servicedata: %u,\nlen: %u,\ntype: %u,\nmessageType: %u,\nadvChannel: %u,\ndeviceType: %u,\ndirection: %u,\nisEmergency: %u,\nisSlippery: %u",
+		logt("ALARMMOD", "advPacketAssetServiceData:\nmway_servicedata: 0x%02X,\nlen: 0x%02X,\ntype: 0x%02X,\nmessageType: 0x%02X,\nadvChannel: 0x%02X,\ndeviceType: 0x%02X,\ndirection: 0x%02X,\nisEmergency: 0x%02X,\nisSlippery: 0x%02X",
 				assetPacket->mway_servicedata,
 				assetPacket->len,
 				assetPacket->type,
@@ -427,6 +441,6 @@ void AlarmModule::GapAdvertisementReportEventHandler(const GapAdvertisementRepor
 				assetPacket->isEmergency,
 				assetPacket->isSlippery
 			);
-		logt("CONFIG", "\n--------------------\n");
+		logt("ALARMMOD", "\n--------------------\n");
 	}
 }
