@@ -11,7 +11,7 @@ import javax.inject.Singleton
 class DataManager @Inject constructor(
     var application: SmartApplication
 ) {
-    var qrScannedNodes = ArrayList<PersistentNode>()
+    var qrScannedNodes =  ArrayList<PersistentNode>()
     private val TAG = "DATA_MANAGER"
     var isSlippery = false
     var isJam = false

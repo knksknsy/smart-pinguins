@@ -88,6 +88,7 @@ class MapFragment : Fragment(), OnMapReadyCallback {
         super.onResume()
         mapFragment?.getMapAsync(this)
         adapter?.update(dataManager.qrScannedNodes)
+        setNodes()
     }
 
 
@@ -104,12 +105,14 @@ class MapFragment : Fragment(), OnMapReadyCallback {
 
     fun createMarkerOptions(node: PersistentNode): MarkerOptions {
 
-        val markerOptions = MarkerOptions().position(LatLng(node.lat, node.lng))
         val bitmap = vectorToBitmap(
-            R.drawable.common_google_signin_btn_icon_dark
+            R.drawable.alexa
         )
-        markerOptions.icon(bitmap)
-        return markerOptions
+        return MarkerOptions()
+            .position(LatLng(node.lat, node.lng))
+            .title("Node: " + node.nodeID)
+            .icon(bitmap)
+            .draggable(false)
     }
 
     private fun vectorToBitmap(@DrawableRes id: Int): BitmapDescriptor {
@@ -130,7 +133,7 @@ class MapFragment : Fragment(), OnMapReadyCallback {
     private fun setPosition(node: PersistentNode) {
 
         val markerOptions = MarkerOptions().position(LatLng(node.lat, node.lng))
-        val bitmap = vectorToBitmap(R.drawable.ic_home_black_24dp)
+        val bitmap = vectorToBitmap(R.drawable.marker_person_vektor)
 
         markerOptions.icon(bitmap)
         markerOptions.zIndex(1f)
@@ -158,8 +161,11 @@ class MapFragment : Fragment(), OnMapReadyCallback {
 
     private fun setBeaconList() {
         mapBeaconList.layoutManager = LinearLayoutManager(context)
-        adapter = MapListAdapter(context, { _, _ ->
-        }, { beacon -> }, dataManager.qrScannedNodes)
+        adapter = MapListAdapter(context, { _, nodeId ->
+            dataManager.qrScannedNodes.removeAt(nodeId)
+            adapter!!.update(dataManager.qrScannedNodes)
+            setNodes()
+        }, dataManager.qrScannedNodes)
         mapBeaconList.adapter = adapter
     }
 
@@ -186,11 +192,9 @@ class MapFragment : Fragment(), OnMapReadyCallback {
             gMap = googleMap
 
             // zoom to our floor
-            val mway = if (setupMode) LatLng(
-                Constants.PARAM_COORD_MWAY_LAT_SETUP,
-                Constants.PARAM_COORD_MWAY_LNG_SETUP
-            ) else LatLng(Constants.PARAM_COORD_MWAY_LAT, Constants.PARAM_COORD_MWAY_LNG)
-            gMap!!.animateCamera(CameraUpdateFactory.newLatLngZoom(mway, 19f))
+            val hdm = LatLng(48.7419229, 9.1005615)
+
+            gMap!!.animateCamera(CameraUpdateFactory.newLatLngZoom(hdm, 14f))
             setNodes()
 
             nodesLiveData.observe(this, Observer { data ->
@@ -199,7 +203,7 @@ class MapFragment : Fragment(), OnMapReadyCallback {
                         .filter { node ->
                             node.nodeID == data[0].messageMeshAccessBroadcast?.deviceNumber?.toLong()
                         }.findFirst()
-                    if(positionNode.isPresent){
+                    if (positionNode.isPresent) {
                         setPosition(positionNode.get())
                     }
                 }
@@ -210,17 +214,16 @@ class MapFragment : Fragment(), OnMapReadyCallback {
 
     fun setGroundOverlay() {
         //Center the ground plan
-        val mway = LatLng(48.808657, 9.178871)
+        val hdm = LatLng(48.7419229, 9.1005615)
         val mwayMap = GroundOverlayOptions()
             .image(BitmapDescriptorFactory.fromResource(R.drawable.common_full_open_on_phone))
-            .position(mway, 130f)
+            .position(hdm, 130f)
         gMap!!.addGroundOverlay(mwayMap)
     }
 
     override fun onPause() {
         super.onPause()
         mapFragment?.onPause()
-        positionMarker == null
         nodesLiveData.removeObservers(this)
 
     }
