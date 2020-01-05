@@ -11,13 +11,9 @@ import javax.inject.Singleton
 class DataManager @Inject constructor(
     var application: SmartApplication
 ) {
-<<<<<<< HEAD
-    var qrScannedNodes = ArrayList<PersistentNode>()
     //mutual live data .value text rein
     //var isEmergency =
-=======
     var qrScannedNodes =  ArrayList<PersistentNode>()
->>>>>>> fefa9e65320c0c28572db9e2e179e9de407989e9
     private val TAG = "DATA_MANAGER"
     var isSlippery = false
     var isJam = false
