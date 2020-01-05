@@ -12,7 +12,8 @@ class DataManager @Inject constructor(
 
 ) {
     var qrScannedNodes = ArrayList<PersistentNode>()
-
+    //mutual live data .value text rein
+    //var isEmergency =
     private val TAG = "DATA_MANAGER"
 }
 

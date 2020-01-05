@@ -110,9 +110,9 @@ class ConnectionManager @Inject constructor(
 
     private fun checkNodeForAlarm(broadcast: MessageMeshBroadcast?) {
         if (broadcast != null
-            && directionAndNodeCheck(broadcast, broadcast.nearestBlackIceNodeId.toInt())
-            && directionAndNodeCheck(broadcast, broadcast.nearestRescueLaneNodeId.toInt())
-            && directionAndNodeCheck(broadcast, broadcast.nearestTrafficJamNodeId.toInt())
+            //&& directionAndNodeCheck(broadcast, broadcast.nearestBlackIceNodeId.toInt())
+            //&& directionAndNodeCheck(broadcast, broadcast.nearestRescueLaneNodeId.toInt())
+            //&& directionAndNodeCheck(broadcast, broadcast.nearestTrafficJamNodeId.toInt())
         ) {
             alarm.value = Alarm(
                 broadcast.nearestBlackIceNodeId.toInt(),

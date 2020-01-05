@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/listview_background_shape" android:layout_width="match_parent" android:layout_height="match_parent">
+    <padding android:left="2dp"
+        android:top="2dp"
+        android:right="2dp"
+        android:bottom="2dp" />
+    <corners android:radius="1dp"
+        android:bottomRightRadius="10dp" android:bottomLeftRadius="10dp"
+        android:topLeftRadius="0dp" android:topRightRadius="0dp"/>
+    <solid android:color="#AF0000" />
+</shape>

@@ -4,13 +4,51 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <TextView
+    <LinearLayout
+        android:id="@+id/platzhalter"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Test text" />
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:layout_margin="10dp">
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/list"
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Test text" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/list"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/emergency"
+        android:visibility="gone"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent">
+
+        <include layout="@layout/fragment_emergency"/>
+    </LinearLayout>
+
+
+    <LinearLayout
+        android:id="@+id/jam"
+        android:visibility="gone"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <include layout="@layout/fragment_jam"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/balckice"
+        android:visibility="gone"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <include layout="@layout/fragment_blackice"/>
+    </LinearLayout>
+
+
 </LinearLayout>
