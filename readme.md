@@ -99,8 +99,8 @@ Kann der Serielle Port nicht an den Container freigegeben werden, dann führe fo
 ## 3. Bauen und Flashen
 
 1. Baue das Projekt mit ```$ make ENV=docker``` aus dem Projektverzeichnis ```smart-pinguins/fruitymesh```.
-2. Der Hex-Output ```FruityMesh.hex``` befindet sich im folgenden Pfad: ```smart-pinguins/fruitymesh/_build```.
-3. Um das Development Kit zu Flashen führe folgenden Befehl im Pfad ```smart-pinguins/fruitymesh/_build``` aus:
+2. Der Hex-Output ```FruityMesh.hex``` befindet sich im folgenden Pfad: ```smart-pinguins/fruitymesh/_build/release/NRF52/github/```.
+3. Um das Development Kit zu Flashen führe folgenden Befehl im Pfad ```smart-pinguins/fruitymesh/_build/release/NRF52/github/``` aus:
 ```nrfjprog --program FruityMesh.hex  --sectorerase -r```
 
 <a name="debugging"></a>

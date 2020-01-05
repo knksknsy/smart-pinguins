@@ -26,7 +26,7 @@ class ScannerListAdapter(internal var beaconMessageArrayList: NodeList, val cont
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         holder.text.text =
-            beaconMessageArrayList[position].messageMeshAccessBroadcast?.advChannel.toString()
+            beaconMessageArrayList[position].messageMeshAccessBroadcast?.clusterSize.toString()
     }
 
 

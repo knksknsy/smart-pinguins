@@ -19,7 +19,7 @@ data class PersistentNodeList (
 data class PersistentNode (
     @Json(name = "nodeId")
     val nodeID: Long,
-
+    val direction: Long,
     val lat: Double,
     val lng: Double,
     val type: Long

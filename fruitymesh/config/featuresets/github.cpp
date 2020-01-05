@@ -61,7 +61,10 @@ void setFeaturesetConfiguration_github(ModuleConfiguration* config, void* module
 		//This enrollment will be overwritten as soon as the node is either enrolled or the enrollment removed
 		NodeConfiguration* c = (NodeConfiguration*) config;
 		c->enrollmentState = EnrollmentState::ENROLLED;
+		// network id has to be the same for all devices
 		c->networkId = 11;
+		// nodeId to use for the devices to flash
+		c->nodeId = 151;
 		CheckedMemset(c->networkKey, 0x00, 16);
 	}
 }

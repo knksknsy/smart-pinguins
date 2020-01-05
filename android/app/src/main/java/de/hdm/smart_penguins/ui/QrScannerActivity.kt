@@ -64,7 +64,7 @@ class QrScannerActivity : BaseActivity(), ZXingScannerView.ResultHandler {
                 if (nodeList != null && nodeList.value.stream()
                         .noneMatch { x ->
                             dataManager.qrScannedNodes.stream()
-                                .anyMatch() { b -> b.nodeID == x.nodeID }
+                                .anyMatch { b -> b.nodeID == x.nodeID }
                         }
                 ) {
                     dataManager.qrScannedNodes.addAll(nodeList.value)

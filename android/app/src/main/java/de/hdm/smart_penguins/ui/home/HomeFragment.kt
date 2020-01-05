@@ -11,6 +11,7 @@ import android.widget.Button
 import android.widget.LinearLayout
 import androidx.annotation.ContentView
 import androidx.lifecycle.Observer
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import de.hdm.closeme.adapter.ScannerListAdapter
 import de.hdm.smart_penguins.R
@@ -20,10 +21,14 @@ import java.lang.NullPointerException
 
 
 class HomeFragment : BaseFragment() {
+<<<<<<< HEAD
 
     var isEmergency: Boolean = false
     var isSlippery: Boolean = false
     var isTraffic: Boolean = false
+=======
+    private var adapter: ScannerListAdapter? = null
+>>>>>>> fefa9e65320c0c28572db9e2e179e9de407989e9
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -34,10 +39,18 @@ class HomeFragment : BaseFragment() {
 
         val root = inflater.inflate(R.layout.fragment_home, container, false)
         val listView: RecyclerView = root.findViewById(R.id.list)
-        val adapter = ScannerListAdapter(NodeList(), context)
+        listView.layoutManager = LinearLayoutManager(context)
+        adapter = ScannerListAdapter(NodeList(), context)
         listView.adapter = adapter
 
+        return root
+    }
+
+    override fun onResume() {
+        super.onResume()
+
         nodesLiveData.observe(this, Observer { data ->
+<<<<<<< HEAD
             adapter.updateBeaconList(data)})
 
         alarm.observe(this, Observer { alarm ->
@@ -112,6 +125,22 @@ class HomeFragment : BaseFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+=======
+            adapter?.updateBeaconList(data)
+        })
+
+        alarm.observe(this, Observer { alarm -> })
+
+        //TODO Change values und update Broadcasting
+        dataManager.isJam = true
+        connectionManager.updateBleBroadcasting()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        alarm.removeObservers(this)
+        nodesLiveData.removeObservers(this)
+>>>>>>> fefa9e65320c0c28572db9e2e179e9de407989e9
     }
 
 }

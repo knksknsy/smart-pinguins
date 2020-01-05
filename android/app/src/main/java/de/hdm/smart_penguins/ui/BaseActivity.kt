@@ -172,6 +172,7 @@ open class BaseActivity : AppCompatActivity() {
     fun initBLEScanning() {
         if (isBluetoothEnabled) {
             connectionManager.initBLEScanner()
+            connectionManager.initBleBroadcasting()
         } else {
             showBLuetoothActivationDialog()
         }

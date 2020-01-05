@@ -42,30 +42,29 @@ extern "C" {
 
 #define PIN_IN 4
 #define PIN_OUT 31
-#define ALARM_MODULE_BAROMETER_SLEEP_DS 150
 
 AlarmModule::AlarmModule() :
-		Module(ModuleId::ALARM_MODULE, "alrm") {
+		Module(ModuleId::ALARM_MODULE, "alarm") {
 	//Start module configuration loading
 	configurationPointer = &configuration;
 	configurationLength = sizeof(AlarmModuleConfiguration);
 	alarmJobHandle = NULL;
 
-	lastTemperatureReading = 0;
-	lastHumidityReading = 0;
-	lastBarometerReadTimeDs = 0;
-	isWindowOpen = false;
-	//logt("ALARM_SYSTEM", "nodeId %u", GS->config->defaultNodeId);
-	lastClusterSize = GS->node.clusterSize;
 	//CONFIG
+	lastClusterSize = GS->node.clusterSize;
+	nearestTrafficJamNodeId = 0;
+	nearestBlackIceNodeId = 0;
+	nearestRescueLaneNodeId = 0;
+	nearestTrafficJamOppositeLaneNodeId = 0;
+	nearestBlackIceOppositeLaneNodeId = 0;
+	nearestRescueLaneOppositeLaneNodeId = 0;
 
-	isActivated = false;
 	GpioInit();
 
 	//Start Broadcasting the informations
 	UpdateGpioState();
 	RequestAlarmUpdatePacket();
-	BroadcastAlarmAdvertisingPacket();
+	BroadcastPenguinAdvertisingPacket();
 	logt("NODE", "Started MIRO");
 
 	ResetToDefaultConfiguration();
@@ -74,15 +73,13 @@ AlarmModule::AlarmModule() :
 
 void AlarmModule::ButtonHandler(u8 buttonId, u32 holdTimeDs) {
 	//Send alarm update message
-	logt("CONFIG", "Button pressed %u. Pressed time: %u", buttonId,
-			holdTimeDs);
-	isActivated = !isActivated;
-	isActivated ? BlinkGreenLed() : BlinkRedLed();
+	logt("ALARMMOD", "Button pressed %u. Pressed time: %u", buttonId, holdTimeDs);
 
+	BlinkGreenLed();
 	UpdateGpioState();
 
-	BroadcastAlarmUpdatePacket();
-	RequestAlarmUpdatePacket();
+	// Broadcast a rescue lane alarm
+	BroadcastAlarmUpdatePacket(GS->node.configuration.nodeId, SERVICE_INCIDENT_TYPE::TRAFFIC_JAM, SERVICE_ACTION_TYPE::SAVE);
 }
 
 void AlarmModule::BlinkGreenLed() {
@@ -91,22 +88,21 @@ void AlarmModule::BlinkGreenLed() {
 	GS->ledGreen.Off();
 }
 
-void AlarmModule::BlinkRedLed() {
-	GS->ledRed.On();
-	nrf_delay_ms(1000);
-	GS->ledRed.Off();
-}
-
 void AlarmModule::ConfigurationLoadedHandler() {
 	//Does basic testing on the loaded configuration
 #if IS_INACTIVE(GW_SAVE_SPACE)
 
 #endif
-
-	logt("CONFIG", "AlarmModule Config Loaded");
-
+	logt("ALARMMOD", "AlarmModule Config Loaded");
 
 }
+
+/*
+ *	RequestAlarmUpdatePacket
+ *
+ *	sends a broadcast message, requesting an update from other nodes
+ *
+ */
 void AlarmModule::RequestAlarmUpdatePacket() {
 	SendModuleActionMessage(
 			MessageType::MODULE_TRIGGER_ACTION,
@@ -124,31 +120,40 @@ void AlarmModule::UpdateGpioState() {
 	nrf_gpio_pin_clear(PIN_OUT);
 }
 
-void AlarmModule::BroadcastAlarmUpdatePacket() {
-	AlarmModuleUpdateMessage data;
-	data.meshDeviceId = GS->node.configuration.nodeId;
+/*
+ *	BroadcastAlarmUpdatePacket
+ *
+ *	sends a broadcast alarm message with the specified incident nodeId, type and action
+ *
+ *	u8 incidentNodeId
+ *	SERVICE_INCIDENT_TYPE incidentType
+ *	SERVICE_ACTION_TYPE incidentAction
 
-	data.meshActionType = isActivated ? gpioState : 1;
-	data.meshDataType = SERVICE_DATA_TYPE_WINDOW_VERSION_ONE;
-		data.meshDataOne = 0xFF;
-		data.meshDataTwo = 0xFF;
+ */
+
+void AlarmModule::BroadcastAlarmUpdatePacket(u8 incidentNodeId, SERVICE_INCIDENT_TYPE incidentType, SERVICE_ACTION_TYPE incidentAction) {
+	AlarmModuleUpdateMessage data;
+	data.meshDeviceId = incidentNodeId;
+	data.meshIncidentType = incidentType;
+	data.meshActionType = incidentAction;
 
 	SendModuleActionMessage(MessageType::MODULE_TRIGGER_ACTION,
 			0,
-			(u8) AlarmModuleTriggerActionMessages::SET_ALARM_SYSTEM_UPDATE, 0,
+			(u8) AlarmModuleTriggerActionMessages::SET_ALARM_SYSTEM_UPDATE,
+			0,
 			(u8*) &data,
 			SIZEOF_ALARM_MODULE_UPDATE_MESSAGE,
 			false);
-
 }
 
-//void in_pin_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
-//{
-//	AlarmModule::isAlarmTriggered = true;
-//}
-
-void AlarmModule::BroadcastAlarmAdvertisingPacket() {
-	logt("ALARM_SYSTEM", "Starting Broadcasting");
+/*
+ *	BroadcastPenguinAdvertisingPacket
+ *
+ *	sends a broadcast message with the current node informations
+ *
+ */
+void AlarmModule::BroadcastPenguinAdvertisingPacket() {
+	logt("ALARM_SYSTEM", "Starting Broadcasting Penguin Packet");
 
 	currentAdvChannel = Utility::GetRandomInteger() % 3;
 
@@ -188,7 +193,7 @@ void AlarmModule::BroadcastAlarmAdvertisingPacket() {
 	serviceUuidList->type = BLE_GAP_AD_TYPE_16BIT_SERVICE_UUID_COMPLETE;
 	serviceUuidList->uuid = SERVICE_DATA_SERVICE_UUID16;
 
-	advPacketAlarmData* alarmData = (advPacketAlarmData*) (bufferPointer
+	AdvPacketPenguinData* alarmData = (AdvPacketPenguinData*) (bufferPointer
 			+ SIZEOF_ADV_STRUCTURE_FLAGS + SIZEOF_ADV_STRUCTURE_UUID16);
 	alarmData->len = SIZEOF_ADV_STRUCTURE_ALARM_SERVICE_DATA - 1;
 	alarmData->type = SERVICE_TYPE_ALARM_UPDATE;
@@ -196,41 +201,18 @@ void AlarmModule::BroadcastAlarmAdvertisingPacket() {
 	alarmData->uuid = SERVICE_DATA_SERVICE_UUID16;
 	alarmData->messageType = SERVICE_DATA_MESSAGE_TYPE_ALARM;
 	alarmData->clusterSize = GS->node.clusterSize;
-	alarmData->clusterId = GS->node.clusterId;
 	alarmData->networkId = GS->node.configuration.networkId;
-	/*alarmData->active =
-			isActivated ?
-					AlarmModuleActiveStates::ACTIVE :
-					AlarmModuleActiveStates::INACTIVE;
-*/
-	alarmData->active = AlarmModuleActiveStates::ACTIVE;
-		alarmData->temperature = 25;
-		alarmData->humidity = HUMIDITY_NO_VALUE;
-		alarmData->boardType = BoardType::DEV_BOARD;
 
+	// Incident data
+	alarmData->nearestRescueLaneNodeId = nearestRescueLaneNodeId;
+	alarmData->nearestTrafficJamNodeId = nearestTrafficJamNodeId;
+	alarmData->nearestBlackIceNodeId = nearestBlackIceNodeId;
+	alarmData->nearestRescueLaneOppositeLaneNodeId = nearestRescueLaneOppositeLaneNodeId;
+	alarmData->nearestTrafficJamOppositeLaneNodeId = nearestTrafficJamOppositeLaneNodeId;
+	alarmData->nearestBlackIceOppositeLaneNodeId = nearestBlackIceOppositeLaneNodeId;
 
 	alarmData->advertisingChannel = currentAdvChannel + 1;
 
-	if (index >= (u8) meshDeviceIdArray.size()) {
-		index = 0;
-	}
-	alarmData->index = index;
-	alarmData->spotCount = meshDeviceIdArray.size();
-	if (meshDeviceIdArray.size() == 0) {
-		alarmData->meshDataType = 0;
-		alarmData->meshDeviceId = 0;
-		alarmData->meshDataOne = 0;
-		alarmData->meshDataTwo = 0;
-	} else {
-		logt("ALARM_SYSTEM", "Index %u, Device %u, Temp %u, Hum %u", index,
-				meshDeviceIdArray.at(index), meshDataOneArray.at(index),
-				meshDataTwoArray.at(index));
-		alarmData->meshDataType = meshDataTypeArray.at(index);
-		alarmData->meshDeviceId = meshDeviceIdArray.at(index);
-		alarmData->meshDataOne = meshDataOneArray.at(index);
-		alarmData->meshDataTwo = meshDataTwoArray.at(index);
-	}
-	index++;
 
 	//logt("ALARM_SYSTEM", "unsecureCount: %u", meshDeviceIdArray.size());
 
@@ -254,7 +236,7 @@ void AlarmModule::BroadcastAlarmAdvertisingPacket() {
 	}
 	char cbuffer[100];
 
-	logt("ALARM_SYSTEM", "Broadcasting asset data %s, len %u", cbuffer, length);
+	logt("ALARMMOD", "Broadcasting asset data %s, len %u", cbuffer, length);
 
 }
 
@@ -267,112 +249,124 @@ void AlarmModule::ResetToDefaultConfiguration() {
 
 }
 
-//
-// 2 windows open. close upper upper one. reopen - > wrong hum and temp
-//
-//
-
 void AlarmModule::MeshMessageReceivedHandler(BaseConnection* connection,
 		BaseConnectionSendData* sendData, connPacketHeader* packetHeader) {
 
 	//Must call superclass for handling
 	Module::MeshMessageReceivedHandler(connection, sendData, packetHeader);
 
+	connPacketModule* packet = (connPacketModule*) packetHeader;
+	AlarmModuleUpdateMessage* data =
+			(AlarmModuleUpdateMessage*) packet->data;
+
 	//Check if this request is meant for modules in general
 	if (packetHeader->messageType == MessageType::MODULE_TRIGGER_ACTION) {
-
+		logt("ALARMMOD", "Received Alarm Update Request");
 		connPacketModule* packet = (connPacketModule*) packetHeader;
 
 		//Check if our module is meant and we should trigger an action
 		if (packet->moduleId == moduleId) {
-
 			if (packet->actionType
 					== AlarmModuleTriggerActionMessages::GET_ALARM_SYSTEM_UPDATE) {
-				logt("ALARM_SYSTEM", "Received Alarm Update Request");
-				BroadcastAlarmUpdatePacket();
-			}
-		}
-	} else if (packetHeader->messageType
-			== MessageType::MODULE_TRIGGER_ACTION) {
-		connPacketModule* packet = (connPacketModule*) packetHeader;
-		if (packet->actionType
-				== AlarmModuleTriggerActionMessages::SET_ALARM_SYSTEM_UPDATE) {
-
-			AlarmModuleUpdateMessage* data =
-					(AlarmModuleUpdateMessage*) packet->data;
-			logt("ALARM_SYSTEM", "ALARM_UPDATE_RECEIVED type %u",
-					data->meshActionType);
-
-			//Not part of the list, add it to it
-			if (!(std::find(meshDeviceIdArray.begin(), meshDeviceIdArray.end(),
-					data->meshDeviceId) != meshDeviceIdArray.end())) {
-				if (data->meshActionType == AlarmModuleStates::SAVE) {
-					meshDeviceIdArray.push_back(data->meshDeviceId);
-					meshDataTypeArray.push_back(data->meshDataType);
-					meshDataOneArray.push_back(data->meshDataOne);
-					meshDataTwoArray.push_back(data->meshDataTwo);
-					logt("ALARM_SYSTEM",
-							"NOT FOUND: positionId %u temp %u hum %u added  ",
-							data->meshDeviceId, data->meshDataOne,
-							data->meshDataTwo);
-
-					logt("ALARM_SYSTEM",
-							"NOT FOUND: idSize %u tempSize %u humSize %u added  ",
-							meshDeviceIdArray.size(), meshDataOneArray.size(),
-							meshDataTwoArray.size());
+				logt("ALARMMOD", "Received Alarm Update GET Request");
+				// For each incident, check if there is a saved one and if there is, broadcast it out
+				if(nearestTrafficJamNodeId != 0) {
+					BroadcastAlarmUpdatePacket(nearestTrafficJamNodeId, SERVICE_INCIDENT_TYPE::TRAFFIC_JAM, SERVICE_ACTION_TYPE::SAVE);
 				}
-
-			}
-			//Part of the list, find the index
-			else {
-				int index = 0;
-				for (std::size_t i = 0; i != meshDeviceIdArray.size(); ++i) {
-
-					// access element as v[i]
-					logt("ALARM_SYSTEM",
-							"LOOP: INDEX %u -> positionId %u temp %u hum %u", i,
-							meshDeviceIdArray.at(i), meshDataOneArray.at(i),
-							meshDataTwoArray.at(i));
-					if (meshDeviceIdArray.at(i) == data->meshDeviceId) {
-						index = i;
-						logt("ALARM_SYSTEM", "ID found at Index %u ", index);
-						//if the id is found, jump out of the loop
-						break;
-					}
+				if(nearestBlackIceNodeId != 0) {
+					BroadcastAlarmUpdatePacket(nearestBlackIceNodeId, SERVICE_INCIDENT_TYPE::BLACK_ICE, SERVICE_ACTION_TYPE::SAVE);
 				}
-				logt("ALARM_SYSTEM", "ID found at Index outside %u ", index);
+				if(nearestRescueLaneNodeId != 0) {
+					BroadcastAlarmUpdatePacket(nearestRescueLaneNodeId, SERVICE_INCIDENT_TYPE::RESCUE_LANE, SERVICE_ACTION_TYPE::SAVE);
+				}
+				if(nearestTrafficJamOppositeLaneNodeId != 0) {
+					BroadcastAlarmUpdatePacket(nearestTrafficJamOppositeLaneNodeId, SERVICE_INCIDENT_TYPE::TRAFFIC_JAM, SERVICE_ACTION_TYPE::SAVE);
+				}
+				if(nearestBlackIceOppositeLaneNodeId != 0) {
+					BroadcastAlarmUpdatePacket(nearestBlackIceOppositeLaneNodeId, SERVICE_INCIDENT_TYPE::BLACK_ICE, SERVICE_ACTION_TYPE::SAVE);
+				}
+				if(nearestRescueLaneOppositeLaneNodeId != 0) {
+					BroadcastAlarmUpdatePacket(nearestRescueLaneOppositeLaneNodeId, SERVICE_INCIDENT_TYPE::RESCUE_LANE, SERVICE_ACTION_TYPE::SAVE);
+				}
+			}
+			if (packet->actionType
+					== AlarmModuleTriggerActionMessages::SET_ALARM_SYSTEM_UPDATE) {
+				logt("ALARMMOD", "Received Alarm Update SET Request");
 
-				if (data->meshActionType == AlarmModuleStates::DELETE) {
-					meshDeviceIdArray.erase(
-							std::remove(meshDeviceIdArray.begin(),
-									meshDeviceIdArray.end(),
-									data->meshDeviceId),
-							meshDeviceIdArray.end());
-					logt("ALARM_SYSTEM", "positionId ist at Position %u ",
-							index);
-					meshDataTypeArray.erase(
-							meshDataTypeArray.begin() + (index));
-					meshDataOneArray.erase(meshDataOneArray.begin() + (index));
-					meshDataTwoArray.erase(meshDataTwoArray.begin() + (index));
-					logt("ALARM_SYSTEM", "positionId %u removed",
-							data->meshDeviceId);
-					logt("ALARM_SYSTEM", "Temp Size %u ",
-							meshDataOneArray.size());
-				} else if (data->meshActionType == AlarmModuleStates::SAVE) {
-					meshDataTypeArray.at(index) = data->meshDataType;
-					meshDataOneArray.at(index) = data->meshDataOne;
-					meshDataTwoArray.at(index) = data->meshDataTwo;
-					logt("ALARM_SYSTEM", "Temp updated %u, Hum updated %u",
-							meshDataOneArray.at(index),
-							meshDataTwoArray.at(index));
-
+				// If incident got updated, broadcast to mesh and to all other devices
+				if(UpdateSavedIncident(data->meshDeviceId, data->meshIncidentType, data->meshActionType)) {
+					BroadcastAlarmUpdatePacket(data->meshDeviceId, (SERVICE_INCIDENT_TYPE)data->meshIncidentType, (SERVICE_ACTION_TYPE)data->meshActionType);
+					BroadcastPenguinAdvertisingPacket();
 				}
 			}
 		}
-		BroadcastAlarmAdvertisingPacket();
 	}
 }
-;
+/* UpdateSavedIncident, updates a saved incident, if it is relevant
+ *
+ * @param u8 incidentNodeId, the id of the node where an incident happened / vanished
+ * @param u8 incidentType, the type of incident, one of SERVICE_INCIDENT_TYPE
+ * @param u8 actionType, the action type, one of SERVICE_ACTION_TYPE
+ *
+ * returns bool changed, true if saved incident got updated, false if not
+ */
+bool AlarmModule::UpdateSavedIncident(u8 incidentNodeId, u8 incidentType, u8 actionType) {
+	bool changed = false;
+	SERVICE_INCIDENT_TYPE incType = (SERVICE_INCIDENT_TYPE)incidentType;
+	SERVICE_ACTION_TYPE actType = (SERVICE_ACTION_TYPE)actionType;
+
+	// create a generic pointer to the incidentId
+	u8 * savedIncidentNodeId = 0;
+	if(incType == TRAFFIC_JAM) {
+		// check if incident id is on same road side
+		if((incidentNodeId - GS->node.configuration.nodeId) % 2 == 0) {
+			savedIncidentNodeId = &nearestTrafficJamNodeId;
+		} else {
+			savedIncidentNodeId = &nearestTrafficJamOppositeLaneNodeId;
+		}
+	} else if(incType == BLACK_ICE) {
+		if((incidentNodeId - GS->node.configuration.nodeId) % 2 == 0) {
+			savedIncidentNodeId = &nearestBlackIceNodeId;
+		} else {
+			savedIncidentNodeId = &nearestBlackIceOppositeLaneNodeId;
+		}
+	} else if(incType == RESCUE_LANE) {
+		if((incidentNodeId - GS->node.configuration.nodeId) % 2 == 0) {
+			savedIncidentNodeId = &nearestRescueLaneNodeId;
+		} else {
+			savedIncidentNodeId = &nearestRescueLaneOppositeLaneNodeId;
+		}
+	}
+
+	if(*savedIncidentNodeId == incidentNodeId && actType == DELETE) {
+		*savedIncidentNodeId = 0;
+		changed = true;
+	// lane with uneven numbers -> driving direction is 1 -> 3 -> 5 | lane with even numbers, driving direction is 6 -> 4 -> 2 ...
+	} else if(*savedIncidentNodeId != incidentNodeId && actType == SAVE) {
+		// incident happened on lane with uneven numbers and is traffic jam or black ice, or happened on even side and is rescue lane
+		// results in the same logic, because of the driving directions (one up and one down)
+		// and the fact that rescue lane is relevant behind us, while the other are relevant ahead of us
+		if((incidentNodeId % 2 != 0 && (incType == TRAFFIC_JAM || incType == BLACK_ICE)) || (incidentNodeId % 2 == 0 && incType == RESCUE_LANE)) {
+			// ... only new incident with an id smaller than the current saved incident id, but not smaller than our id - 1
+			// ( +1 so beacon on same position on other lane is included) are relevant
+			// if savedIncidentNodeId is 0, there is no saved incident yet, which means we only have to check if it is ahead of us
+			if((incidentNodeId < *savedIncidentNodeId || *savedIncidentNodeId == 0) && incidentNodeId >= GS->node.configuration.nodeId - 1) {
+				*savedIncidentNodeId = incidentNodeId;
+				changed = true;
+			}
+		} else {
+			// ... only new incident with an id bigger than the current saved incident id, but not bigger than our id + 1
+			// ( +1 so beacon on same position on other lane is included) are relevant
+			//  *savedIncidentNodeId == 0 check is not needed here because > comparison always overwrites the 0 case (no saved incident yet)
+			if(incidentNodeId > *savedIncidentNodeId && incidentNodeId <= GS->node.configuration.nodeId + 1) {
+				*savedIncidentNodeId = incidentNodeId;
+				changed = true;
+			}
+		}
+	}
+
+	return changed;
+}
 
 void AlarmModule::TimerEventHandler(u16 passedTimeDs, u32 appTimerDs) {
 	if (!configuration.moduleActive)
@@ -380,34 +374,7 @@ void AlarmModule::TimerEventHandler(u16 passedTimeDs, u32 appTimerDs) {
 
 	if (SHOULD_IV_TRIGGER(appTimerDs, passedTimeDs,
 			ALARM_MODULE_BROADCAST_TRIGGER_TIME)) {
-		BroadcastAlarmAdvertisingPacket();
-	}
-
-	if (SHOULD_IV_TRIGGER(appTimerDs, passedTimeDs,
-			ALARM_MODULE_SENSOR_SCAN_TRIGGER_TIME)) {
-		nrf_gpio_pin_set(PIN_OUT);
-
-		if (nrf_gpio_pin_read(PIN_IN) != gpioState) {
-			GS->ledRed.On();
-			gpioState = nrf_gpio_pin_read(PIN_IN);
-			BroadcastAlarmUpdatePacket();
-			GS->ledRed.Off();
-		}
-		nrf_gpio_pin_clear(PIN_OUT);
-		//nrf_gpio_pin_set(PIN_OUT);
-
-		//BackUp For 2 Cluster
-		if (lastClusterSize != GS->node.clusterSize) {
-			BroadcastAlarmUpdatePacket();
-			lastClusterSize = GS->node.clusterSize;
-		}
-	}
-
-	if (gpioState == AlarmModuleStates::SAVE
-			&& (i8) lastTemperatureReading != stateChangedTemperatureReading) {
-		BroadcastAlarmUpdatePacket();
-		stateChangedTemperatureReading = lastTemperatureReading;
-
+		BroadcastPenguinAdvertisingPacket();
 	}
 }
 
@@ -418,3 +385,62 @@ void AlarmModule::GpioInit() {
 	nrf_gpio_cfg_input(PIN_IN, NRF_GPIO_PIN_NOPULL);
 }
 
+void AlarmModule::GapAdvertisementReportEventHandler(const GapAdvertisementReportEvent& advertisementReportEvent)
+{
+	if (!configuration.moduleActive) return;
+
+	const advPacketServiceAndDataHeader* packet = (const advPacketServiceAndDataHeader*)advertisementReportEvent.getData();
+	const advPacketCarServiceData* assetPacket = (const advPacketCarServiceData*)&packet->data;
+
+	// FIXME: Filter UUID
+	if (packet->data.uuid == 4503 && packet->uuid.uuid == 4630) {
+
+		const advPacketServiceAndDataHeader header = *packet;
+		unsigned char* rawDataPtr1 = (unsigned char *)&header;
+		u16 size1 = sizeof(header);
+		logt("ALARMMOD", "raw data (advPacketServiceAndDataHeader):\n");
+		while(size1--) {
+			logt("ALARMMOD", "0x%02X", *rawDataPtr1++);
+		}
+		
+		const advPacketCarServiceData data = *assetPacket;
+		unsigned char* rawDataPtr2 = (unsigned char *)&data;
+		u16 size2 = sizeof(data);
+		logt("ALARMMOD", "raw data (advPacketCarServiceData):\n");
+		while(size2--) {
+			logt("ALARMMOD", "0x%02X", *rawDataPtr2++);
+		}
+		
+		logt("ALARMMOD", "advPacketServiceAndDataHeader:\n");
+		logt("ALARMMOD", "advStructureFlags:\nlen: 0x%02X,\ntype: 0x%02X,\nflags: 0x%02X\n",
+				packet->flags.len,
+				packet->flags.type,
+				packet->flags.flags
+			);
+		logt("ALARMMOD", "advStructureUUID16:\nlen: 0x%02X,\ntype: 0x%02X,\nuuid: 0x%02X\n",
+				packet->uuid.len,
+				packet->uuid.type,
+				packet->uuid.uuid
+			);
+		logt("ALARMMOD", "advStructureServiceDataAndType:\nlen: 0x%02X,\ntype: 0x%02X,\nuuid: 0x%02X,\nmessageType: 0x%02X",
+				packet->data.len,
+				packet->data.type,
+				packet->data.uuid,
+				packet->data.messageType
+			);
+		logt("ALARMMOD", "\n--------------------\n");
+
+		logt("ALARMMOD", "advPacketAssetServiceData:\nmway_servicedata: 0x%02X,\nlen: 0x%02X,\ntype: 0x%02X,\nmessageType: 0x%02X,\nadvChannel: 0x%02X,\ndeviceType: 0x%02X,\ndirection: 0x%02X,\nisEmergency: 0x%02X,\nisSlippery: 0x%02X",
+				assetPacket->mway_servicedata,
+				assetPacket->len,
+				assetPacket->type,
+				assetPacket->messageType,
+				assetPacket->advChannel,
+				assetPacket->deviceType,
+				assetPacket->direction,
+				assetPacket->isEmergency,
+				assetPacket->isSlippery
+			);
+		logt("ALARMMOD", "\n--------------------\n");
+	}
+}

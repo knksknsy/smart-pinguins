@@ -12,7 +12,6 @@ import kotlinx.android.synthetic.main.list_map_device.view.*
 class MapListAdapter(
     val context: Context?,
     val clickAction: (PersistentNode, Int) -> Unit,
-    val placeAction: (PersistentNode) -> Unit,
     var persistentNodeList: ArrayList<PersistentNode>
 ) : RecyclerView.Adapter<MapListAdapter.ViewHolder>() {
 
@@ -30,14 +29,11 @@ class MapListAdapter(
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val node = persistentNodeList[position]
-        holder.itemLayout.setOnClickListener {
+        holder.placeButton.setOnClickListener {
             clickAction.invoke(node, position)
         }
         holder.deviceName.text = node.nodeID.toString()
         holder.deviceNumber.text = node.type.toString()
-        holder.placeButton.setOnClickListener {
-            placeAction.invoke(node)
-        }
     }
 
 
