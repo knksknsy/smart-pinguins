@@ -8,6 +8,8 @@
     <color name="progressGreen">#91dc5a</color>
     <color name="progressRed">#ff5959</color>
 
+    <color name="defaultBtn">#5A595B</color>
+
 
     <color name="White0">#00FFFFFF</color>
     <color name="White10">#10FFFFFF</color>

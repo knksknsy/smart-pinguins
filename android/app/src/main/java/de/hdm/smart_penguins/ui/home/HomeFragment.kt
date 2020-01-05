@@ -37,7 +37,8 @@ class HomeFragment : BaseFragment() {
         })
 
         alarm.observe(this, Observer { alarm ->
-            try {
+
+            whenNotNull(alarm) {
                 if (0 != alarm.nearestRescueLaneNodeId) {
                     setVisibility(root, "emergency")
                 }
@@ -51,34 +52,9 @@ class HomeFragment : BaseFragment() {
                 Log.e("Jam", alarm.nearestTrafficJamNodeId.toString())
                 Log.e("Blackice", alarm.nearestBlackIceNode.toString())
                 Log.e("Device Nr", alarm.currentNode.toString())
-            } catch (e: NullPointerException) {
-                Log.e("Alarm is", "null")
             }
-
-
         })
     }
-
-//    private fun showDialog(title: String) {
-//        val dialog = Dialog(requireActivity())
-//        dialog .requestWindowFeature(Window.FEATURE_NO_TITLE)
-//        dialog .setCancelable(false)
-//        val width = ViewGroup.LayoutParams.MATCH_PARENT
-//        val height = ViewGroup.LayoutParams.MATCH_PARENT
-//        dialog.window?.setLayout(width, height)
-//        when(title) {
-//            "fragment_emergency" -> dialog .setContentView(R.layout.fragment_emergency)
-//            "fragment_blackice"-> dialog .setContentView(R.layout.fragment_blackice)
-//            "fragment_jam" -> dialog .setContentView(R.layout.fragment_jam)
-//            else -> println("Error: title not found " + title.toString())
-//        }
-//        dialog .setContentView(R.layout.fragment_emergency)
-//        val noBtn = dialog .findViewById(R.id.button1) as Button
-//
-//        noBtn.setOnClickListener { dialog .dismiss() }
-//        dialog .show()
-//
-//    }
 
     private fun BEISPIELZUMAENDERNDERBROADCASTNACHRICHT(){
         //TODO Change values und update Broadcasting
@@ -117,4 +93,7 @@ class HomeFragment : BaseFragment() {
         nodesLiveData.removeObservers(this)
     }
 
+    inline fun <T:Any, R> whenNotNull(input: T?, callback: (T)->R): R? {
+        return input?.let(callback)
+    }
 }
