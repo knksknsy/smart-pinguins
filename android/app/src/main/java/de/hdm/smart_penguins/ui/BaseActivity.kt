@@ -17,6 +17,7 @@ import de.hdm.smart_penguins.component.BleNodesLiveData
 import de.hdm.smart_penguins.data.Constants
 import de.hdm.smart_penguins.data.manager.ConnectionManager
 import de.hdm.smart_penguins.data.manager.DataManager
+import de.hdm.smart_penguins.data.manager.PhoneSensorManager
 import de.hdm.smart_penguins.utils.PermissionDependentTask
 import de.hdm.smart_penguins.utils.PermissionsHandler
 import java.io.File
@@ -29,6 +30,9 @@ open class BaseActivity : AppCompatActivity() {
 
     @Inject
     lateinit var dataManager: DataManager
+
+    @Inject
+    lateinit var phoneSensorManager: PhoneSensorManager
 
     @Inject
     internal lateinit var nodesLiveData: BleNodesLiveData
@@ -176,6 +180,7 @@ open class BaseActivity : AppCompatActivity() {
         } else {
             showBLuetoothActivationDialog()
         }
+        phoneSensorManager.initSensorManager()
     }
 
     fun stopBLEScanning() {
