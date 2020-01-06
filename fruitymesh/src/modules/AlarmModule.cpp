@@ -203,13 +203,21 @@ void AlarmModule::BroadcastPenguinAdvertisingPacket() {
 	alarmData->clusterSize = GS->node.clusterSize;
 	alarmData->networkId = GS->node.configuration.networkId;
 
-	// Incident data
-	alarmData->nearestRescueLaneNodeId = nearestRescueLaneNodeId;
-	alarmData->nearestTrafficJamNodeId = nearestTrafficJamNodeId;
-	alarmData->nearestBlackIceNodeId = nearestBlackIceNodeId;
-	alarmData->nearestRescueLaneOppositeLaneNodeId = nearestRescueLaneOppositeLaneNodeId;
-	alarmData->nearestTrafficJamOppositeLaneNodeId = nearestTrafficJamOppositeLaneNodeId;
-	alarmData->nearestBlackIceOppositeLaneNodeId = nearestBlackIceOppositeLaneNodeId;
+	// Incident data, only send if there actually is an incident (but if there is, need to send all to keep structure)
+	if(
+			nearestRescueLaneNodeId != 0 || nearestRescueLaneOppositeLaneNodeId != 0 ||
+			nearestTrafficJamNodeId != 0 || nearestTrafficJamOppositeLaneNodeId != 0 ||
+			nearestBlackIceNodeId != 0 || nearestBlackIceOppositeLaneNodeId != 0
+		)
+	{
+		alarmData->nearestRescueLaneNodeId = nearestRescueLaneNodeId;
+		alarmData->nearestTrafficJamNodeId = nearestTrafficJamNodeId;
+		alarmData->nearestBlackIceNodeId = nearestBlackIceNodeId;
+		alarmData->nearestRescueLaneOppositeLaneNodeId = nearestRescueLaneOppositeLaneNodeId;
+		alarmData->nearestTrafficJamOppositeLaneNodeId = nearestTrafficJamOppositeLaneNodeId;
+		alarmData->nearestBlackIceOppositeLaneNodeId = nearestBlackIceOppositeLaneNodeId;
+	}
+
 
 	alarmData->advertisingChannel = currentAdvChannel + 1;
 
