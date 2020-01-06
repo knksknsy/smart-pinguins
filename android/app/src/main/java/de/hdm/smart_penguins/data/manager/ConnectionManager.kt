@@ -43,7 +43,7 @@ class ConnectionManager @Inject constructor(
     @Inject
     lateinit var alarm: AlarmLiveData
     @Inject
-    lateinit var sensorManager: SensorManager
+    lateinit var sensorManager: PhoneSensorManager
     @Inject
     lateinit var dataManager: DataManager
 
