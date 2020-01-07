@@ -28,13 +28,16 @@
 #include <AdvertisingController.h>
 #include <Boardconfig.h>
 #include "vector"
+#include <stdbool.h>
 
 #define SIZEOF_ALARM_MODULE_UPDATE_MESSAGE 5
 
 #define SERVICE_DATA_MESSAGE_TYPE_ALARM 25
 #define SERVICE_TYPE_ALARM_UPDATE 33
 #define ALARM_MODULE_BROADCAST_TRIGGER_TIME 300
+#define ALARM_MODULE_TRAFFIC_JAM_DETECTION_TIME_DS 50
 #define ASSET_PACKET_BUFFER_SIZE 30
+#define ALARM_MODULE_TRAFFIC_JAM_WARNING_RANGE 50
 
 //Service Data (max. 24 byte)
 #define SIZEOF_ADV_STRUCTURE_ALARM_SERVICE_DATA 22 //ToDo
@@ -74,21 +77,33 @@ typedef struct {
 	u8 meshActionType; // incident type action, e.g SAVE or DELETE, one of SERVICE_ACTION_TYPE
 }AlarmModuleUpdateMessage;
 
+#define SIZE_ADV_PACKET_CAR_DATA 11
 // Message from Car to Mesh
 typedef struct {
     //6 byte header
-	u16 mway_servicedata;
     u8 len;  
     u8 type; 
     u16 messageType;
+	u16 deviceID;
  
     //5 byte car information (Können/sollten auch nur als Bits gesetzt werden)
-	u8 advChannel; //Wird entfernt
     u8 deviceType; // Car, bicycle, pedestrian
 	u8 direction; // 1 = North / 4 = East / 2-3 = NorthEast etc.
 	u8 isEmergency;
     u8 isSlippery;
+	u8 isJam;
 }AdvPacketCarData;
+
+#define SIZE_ADV_PACKET_CAR_SERVICE_AND_DATA_HEADER 9
+typedef struct
+{
+	// 9 byte header
+	u16 flags;
+	u16 mway_service_uuid;
+	u16 flags2;
+	u16 mway_service_uuid2;
+	u8 data[SIZE_ADV_PACKET_CAR_DATA];
+}advPacketCarServiceAndDataHeader;
 
 class AlarmModule: public Module {
 private:
@@ -107,8 +122,24 @@ private:
 		GET_ALARM_SYSTEM_UPDATE = 3
 	};
 
+	enum TrafficJamTriggerActionMessages {
+		TRIGGER_CHECK_LEFT_NODE = 0,
+		TRIGGER_CHECK_RIGHT_NODE = 1,
+		TRIGGER_TRAFFIC_JAM_WARNING_NODE = 2,
+		TRIGGER_CHECK_LEFT_NODE_AT_BACK = 3,
+		TRIGGER_CHECK_RIGHT_NODE_AT_BACK = 4
+	};
+
 	enum AlarmModuleActionResponseMessages {
 		ALARM_SYSTEM_UPDATE = 1
+	};
+
+	enum TrafficJamActionResponseMessages {
+		RESPONSE_FROM_LEFT_NODE = 0,
+		RESPONSE_FROM_RIGHT_NODE = 1,
+		RESPONSE_FROM_TRAFFIC_JAM_WARNING_NODE = 2,
+		RESPONSE_FROM_LEFT_NODE_AT_BACK = 2,
+		RESPONSE_FROM_RIGHT_NODE_AT_BACK = 3
 	};
 
 	enum BoardType {
@@ -140,8 +171,8 @@ private:
 
 	enum SERVICE_INCIDENT_TYPE {
 		RESCUE_LANE = 0,
-		TRAFFIC_JAM = 1,
-		BLACK_ICE = 2,
+		BLACK_ICE = 1,
+		TRAFFIC_JAM = 2		
 	};
 	enum SERVICE_ACTION_TYPE {
 		DELETE = 0,
@@ -162,6 +193,9 @@ private:
 
 	u8 lastClusterSize;
 	u8 gpioState;
+	u16 prevDeviceID;
+	bool checkTrafficJamTimer;
+
 #pragma pack(pop)
 
 public:
@@ -176,7 +210,7 @@ public:
 
 	void BroadcastPenguinAdvertisingPacket();
 
-	void BroadcastAlarmUpdatePacket(u8 incidentNodeId, SERVICE_INCIDENT_TYPE incidentType, SERVICE_ACTION_TYPE incidentAction);
+	void BroadcastAlarmUpdatePacket(u8 incidentNodeId, SERVICE_INCIDENT_TYPE incidentType, SERVICE_ACTION_TYPE incidentAction, NodeId targetNodeId = 0);
 
 	void RequestAlarmUpdatePacket();
 
