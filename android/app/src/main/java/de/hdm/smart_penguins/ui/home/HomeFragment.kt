@@ -17,11 +17,6 @@ import de.hdm.smart_penguins.ui.BaseFragment
 class HomeFragment : BaseFragment() {
 
     private var root: View? = null
-    var isEmergency: Boolean = false
-    var isSlippery: Boolean = false
-    var isTraffic: Boolean = false
-
-
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -101,6 +96,7 @@ class HomeFragment : BaseFragment() {
         //TODO Change values und update Broadcasting
         dataManager.isSlippery = true
         connectionManager.updateBleBroadcasting()
+        dataManager.device
     }
 
 
