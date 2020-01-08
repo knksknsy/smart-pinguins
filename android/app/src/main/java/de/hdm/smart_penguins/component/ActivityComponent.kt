@@ -7,7 +7,7 @@ import dagger.Subcomponent
 import de.hdm.smart_penguins.SmartApplication
 import de.hdm.smart_penguins.data.manager.ConnectionManager
 import de.hdm.smart_penguins.data.manager.DataManager
-import de.hdm.smart_penguins.data.manager.SensorManager
+import de.hdm.smart_penguins.data.manager.PhoneSensorManager
 import de.hdm.smart_penguins.data.model.Alarm
 import de.hdm.smart_penguins.data.model.NodeList
 import de.hdm.smart_penguins.data.model.PersistentNodeList
@@ -37,6 +37,7 @@ interface ActivityComponent {
     fun inject(fragment: BaseFragment)
     fun inject(fragment: MapFragment)
     fun inject(manager: ConnectionManager)
+    fun inject(manager: PhoneSensorManager)
 }
 
 typealias BleNodesLiveData = MutableLiveData<NodeList>
@@ -81,8 +82,8 @@ class DataModule {
 class SensorModule {
     @ActivityScope
     @Provides
-    fun providesSensorManager(application: SmartApplication): SensorManager {
-        return SensorManager(application)
+    fun providesSensorManager(application: SmartApplication): PhoneSensorManager {
+        return PhoneSensorManager(application)
     }
 }
 

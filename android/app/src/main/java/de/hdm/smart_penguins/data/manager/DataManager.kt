@@ -18,7 +18,8 @@ class DataManager @Inject constructor(
     var isSlippery = false
     var isJam = false
     var isEmergency = false
-    var direction = 1
+    // (0 = North, 1-2 = NorthEast, 3 = East, 4-5 = SouthEast, 6 = South, 7-8 = SouthWest, 9 = West, 10 - 11 = NorthWest)
+    var direction = 0
     var type = 0
     var device = Constants.DEVICE_TYPE_CAR
     var isRightTurn = false
