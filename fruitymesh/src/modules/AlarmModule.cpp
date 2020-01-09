@@ -472,7 +472,7 @@ void AlarmModule::TimerEventHandler(u16 passedTimeDs, u32 appTimerDs)
  *
  * returns intersection of multiply collections
  */
-vector<u16> getTrafficJamPoolIntersection(vector<vector<u16>> &sets)
+vector<u16> AlarmModule::getIntersectionFromPool(vector<vector<u16>> &sets)
 {
 	vector<u16> result;			  // To store the reaultant set
 	u16 smallSetInd = 0;		  // Initialize index of smallest set
@@ -612,7 +612,7 @@ void AlarmModule::GapAdvertisementReportEventHandler(const GapAdvertisementRepor
 	}
 }
 
-void addToTrafficJamPool(vector<u16> &pool, u16 deviceID)
+void AlarmModule::addToTrafficJamPool(vector<u16> &pool, u16 deviceID)
 {
 	if (pool.size() >= 10)
 		pool.erase(pool.begin());

@@ -232,12 +232,12 @@ public:
 	void BlinkGreenLed();
 
 	void UpdateGpioState();
-
-	virtual void GapAdvertisementReportEventHandler(const GapAdvertisementReportEvent& advertisementReportEvent) override;
+	
+	void addToTrafficJamPool(vector<u16> &pool, u16 deviceID);
 
 	vector<u16> getIntersectionFromPool(vector<vector<u16>> &sets);
 
-	void addToTrafficJamPool(vector<u16> &pool, u16 deviceID);
+	virtual void GapAdvertisementReportEventHandler(const GapAdvertisementReportEvent& advertisementReportEvent) override;
 };
 
 
