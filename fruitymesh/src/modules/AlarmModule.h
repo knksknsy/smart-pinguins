@@ -20,6 +20,8 @@
 
  */
 
+using namespace std;
+
 #pragma once
 
 #include <Module.h>
@@ -34,8 +36,8 @@
 
 #define SERVICE_DATA_MESSAGE_TYPE_ALARM 25
 #define SERVICE_TYPE_ALARM_UPDATE 33
-#define ALARM_MODULE_BROADCAST_TRIGGER_TIME 300
-#define ALARM_MODULE_TRAFFIC_JAM_DETECTION_TIME_DS 50
+#define ALARM_MODULE_BROADCAST_TRIGGER_TIME_DS 3
+#define ALARM_MODULE_TRAFFIC_JAM_DETECTION_TIME_DS 20
 #define ASSET_PACKET_BUFFER_SIZE 30
 #define ALARM_MODULE_TRAFFIC_JAM_WARNING_RANGE 50
 
@@ -172,7 +174,9 @@ private:
 	enum SERVICE_INCIDENT_TYPE {
 		RESCUE_LANE = 0,
 		BLACK_ICE = 1,
-		TRAFFIC_JAM = 2		
+		TRAFFIC_JAM = 2,
+		// TODO: Implement BREAK_DOWN use case if neccessary
+		BREAK_DOWN = 3
 	};
 	enum SERVICE_ACTION_TYPE {
 		DELETE = 0,
@@ -193,8 +197,9 @@ private:
 
 	u8 lastClusterSize;
 	u8 gpioState;
-	u16 prevDeviceID;
-	bool checkTrafficJamTimer;
+
+	u8 trafficJamInterval;
+	vector<vector<u16>> trafficJamPools;
 
 #pragma pack(pop)
 
@@ -229,6 +234,10 @@ public:
 	void UpdateGpioState();
 
 	virtual void GapAdvertisementReportEventHandler(const GapAdvertisementReportEvent& advertisementReportEvent) override;
+
+	vector<u16> getIntersectionFromPool(vector<vector<u16>> &sets);
+
+	void addToTrafficJamPool(vector<u16> &pool, u16 deviceID);
 };
 
 

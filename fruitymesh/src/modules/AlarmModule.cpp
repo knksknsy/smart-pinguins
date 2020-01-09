@@ -25,9 +25,11 @@
 #include <Logger.h>
 #include <algorithm>
 #include <vector>
+#include <map>
 #include <Node.h>
 #include <Utility.h>
 #include <math.h>
+#include <algorithm>
 #include <GlobalState.h>
 
 #include <stdbool.h>
@@ -44,6 +46,8 @@ extern "C"
 #define PIN_IN 4
 #define PIN_OUT 31
 
+using namespace std;
+
 AlarmModule::AlarmModule() : Module(ModuleId::ALARM_MODULE, "alarm")
 {
 	//Start module configuration loading
@@ -59,9 +63,8 @@ AlarmModule::AlarmModule() : Module(ModuleId::ALARM_MODULE, "alarm")
 	nearestTrafficJamOppositeLaneNodeId = 0;
 	nearestBlackIceOppositeLaneNodeId = 0;
 	nearestRescueLaneOppositeLaneNodeId = 0;
-	prevDeviceID = 0;
 
-	checkTrafficJamTimer = false;
+	trafficJamInterval = 0;
 
 	GpioInit();
 
@@ -213,11 +216,9 @@ void AlarmModule::BroadcastPenguinAdvertisingPacket()
 	alarmData->networkId = GS->node.configuration.networkId;
 
 	// Incident data, only send if there actually is an incident (but if there is, need to send all to keep structure)
-	if(
-			nearestRescueLaneNodeId != 0 || nearestRescueLaneOppositeLaneNodeId != 0 ||
-			nearestTrafficJamNodeId != 0 || nearestTrafficJamOppositeLaneNodeId != 0 ||
-			nearestBlackIceNodeId != 0 || nearestBlackIceOppositeLaneNodeId != 0
-		)
+	if (nearestRescueLaneNodeId != 0 || nearestRescueLaneOppositeLaneNodeId != 0 ||
+		nearestTrafficJamNodeId != 0 || nearestTrafficJamOppositeLaneNodeId != 0 ||
+		nearestBlackIceNodeId != 0 || nearestBlackIceOppositeLaneNodeId != 0)
 	{
 		alarmData->nearestRescueLaneNodeId = nearestRescueLaneNodeId;
 		alarmData->nearestTrafficJamNodeId = nearestTrafficJamNodeId;
@@ -226,7 +227,6 @@ void AlarmModule::BroadcastPenguinAdvertisingPacket()
 		alarmData->nearestTrafficJamOppositeLaneNodeId = nearestTrafficJamOppositeLaneNodeId;
 		alarmData->nearestBlackIceOppositeLaneNodeId = nearestBlackIceOppositeLaneNodeId;
 	}
-
 
 	alarmData->advertisingChannel = currentAdvChannel + 1;
 
@@ -275,13 +275,13 @@ void AlarmModule::MeshMessageReceivedHandler(BaseConnection *connection, BaseCon
 	{
 		logt("ALARMMOD", "Received Alarm Update Request");
 		connPacketModule *packet = (connPacketModule *)packetHeader;
+		AlarmModuleUpdateMessage *data = (AlarmModuleUpdateMessage *)packet->data;
 
 		//Check if our module is meant and we should trigger an action
 		if (packet->moduleId == moduleId)
 		{
 			if (packet->actionType == AlarmModuleTriggerActionMessages::GET_ALARM_SYSTEM_UPDATE)
 			{
-				AlarmModuleUpdateMessage *data = (AlarmModuleUpdateMessage *)packet->data;
 				logt("ALARMMOD", "Received Alarm Update GET Request");
 				// For each incident, check if there is a saved one and if there is, broadcast it out
 				if (nearestTrafficJamNodeId != 0)
@@ -311,112 +311,13 @@ void AlarmModule::MeshMessageReceivedHandler(BaseConnection *connection, BaseCon
 			}
 			if (packet->actionType == AlarmModuleTriggerActionMessages::SET_ALARM_SYSTEM_UPDATE)
 			{
-				AlarmModuleUpdateMessage *data = (AlarmModuleUpdateMessage *)packet->data;
 				logt("ALARMMOD", "Received Alarm Update SET Request");
 
 				// If incident got updated, broadcast to mesh and to all other devices
 				if (UpdateSavedIncident(data->meshDeviceId, data->meshIncidentType, data->meshActionType))
 				{
-					BroadcastAlarmUpdatePacket(data->meshDeviceId, (SERVICE_INCIDENT_TYPE)data->meshIncidentType, (SERVICE_ACTION_TYPE)data->meshActionType);
 					BroadcastPenguinAdvertisingPacket();
 				}
-			}
-			if (packet->actionType == TrafficJamTriggerActionMessages::TRIGGER_CHECK_LEFT_NODE)
-			{
-				// Check if traffic jam alarm is active
-				if (nearestTrafficJamNodeId == GS->node.configuration.nodeId)
-				{
-					// Deactivate traffic jam of left node, since it's right node will activate traffic jam alarm
-					nearestTrafficJamNodeId = 0;
-				}
-
-				// Send response to sender node (predecessor of left node)
-				SendModuleActionMessage(MessageType::MODULE_ACTION_RESPONSE,
-										packetHeader->sender,
-										TrafficJamActionResponseMessages::RESPONSE_FROM_LEFT_NODE,
-										0,
-										0,
-										0,
-										false);
-			}
-			if (packet->actionType == TrafficJamTriggerActionMessages::TRIGGER_CHECK_LEFT_NODE_AT_BACK)
-			{
-				if (nearestTrafficJamNodeId == GS->node.configuration.nodeId)
-				{
-					nearestTrafficJamNodeId = 0;
-				}
-
-				// Check if left node (back) has traffic jam alert
-				SendModuleActionMessage(MessageType::MODULE_TRIGGER_ACTION,
-										GS->node.configuration.nodeId - 4, // targetNode = right node
-										(u8)TrafficJamTriggerActionMessages::TRIGGER_CHECK_RIGHT_NODE_AT_BACK,
-										0,
-										0,
-										0,
-										false);
-				// Check if right node (back) has traffic jam alert
-			}
-			if (packet->actionType == TrafficJamTriggerActionMessages::TRIGGER_CHECK_RIGHT_NODE_AT_BACK)
-			{
-				u8 data[1];
-				// Right node has already traffic jam alarm activated => set active alarm => set response
-				if (nearestTrafficJamNodeId == GS->node.configuration.nodeId)
-				{
-					// SAVE alarm 2500m before traffic jam
-					nearestTrafficJamNodeId = GS->node.configuration.nodeId;
-					BroadcastAlarmUpdatePacket(GS->node.configuration.nodeId, SERVICE_INCIDENT_TYPE::TRAFFIC_JAM, SERVICE_ACTION_TYPE::SAVE);
-					data[0] = 1;
-				}
-				// Right node has no traffic jam alarm => send response to warning node => set response
-				else if (nearestTrafficJamNodeId == 0)
-				{
-					data[0] = 0;	
-				}
-				
-				// Send response to traffic jam warning node
-				SendModuleActionMessage(MessageType::MODULE_TRIGGER_ACTION,
-										GS->node.configuration.nodeId + 2, // targetNode = right node
-										(u8)TrafficJamTriggerActionMessages::TRIGGER_TRAFFIC_JAM_WARNING_NODE,
-										0,
-										data,
-										1,
-										false);
-			}
-			if (packet->actionType == TrafficJamTriggerActionMessages::TRIGGER_TRAFFIC_JAM_WARNING_NODE)
-			{
-				// Activate alarm since right node has no alarm set
-				if (packet->data[0] == 0)
-				{
-					// SAVE alarm 2500m before traffic jam
-					nearestTrafficJamNodeId = GS->node.configuration.nodeId;
-					BroadcastAlarmUpdatePacket(GS->node.configuration.nodeId, SERVICE_INCIDENT_TYPE::TRAFFIC_JAM, SERVICE_ACTION_TYPE::SAVE);
-				}
-			}
-		}
-	}
-
-	if (packetHeader->messageType == MessageType::MODULE_ACTION_RESPONSE)
-	{
-		logt("ALARMMOD", "Received Alarm Action Response");
-		connPacketModule *packet = (connPacketModule *)packetHeader;
-
-		if (packet->moduleId == moduleId)
-		{
-			// @TODO: Handle response timeout
-			if (packet->actionType == TrafficJamActionResponseMessages::RESPONSE_FROM_LEFT_NODE)
-			{
-				// DELETE alarm when traffic jam is reached
-				nearestTrafficJamNodeId = GS->node.configuration.nodeId;
-				BroadcastAlarmUpdatePacket(GS->node.configuration.nodeId, SERVICE_INCIDENT_TYPE::TRAFFIC_JAM, SERVICE_ACTION_TYPE::DELETE);
-
-				// Activate alarm at (nodeID - 50)
-				SendModuleActionMessage(MessageType::MODULE_TRIGGER_ACTION,
-										GS->node.configuration.nodeId - ALARM_MODULE_TRAFFIC_JAM_WARNING_RANGE + 2, // targetNode = left node
-										(u8)TrafficJamTriggerActionMessages::TRIGGER_CHECK_LEFT_NODE_AT_BACK,
-										0,
-										0,
-										0,
-										false);
 			}
 		}
 	}
@@ -434,6 +335,11 @@ bool AlarmModule::UpdateSavedIncident(u8 incidentNodeId, u8 incidentType, u8 act
 	bool changed = false;
 	SERVICE_INCIDENT_TYPE incType = (SERVICE_INCIDENT_TYPE)incidentType;
 	SERVICE_ACTION_TYPE actType = (SERVICE_ACTION_TYPE)actionType;
+
+	if (abs(incidentNodeId - GS->node.configuration.nodeId) > ALARM_MODULE_TRAFFIC_JAM_WARNING_RANGE)
+	{
+		return changed;
+	}
 
 	// create a generic pointer to the incidentId
 	u8 *savedIncidentNodeId = 0;
@@ -510,20 +416,135 @@ bool AlarmModule::UpdateSavedIncident(u8 incidentNodeId, u8 incidentType, u8 act
 	return changed;
 }
 
-void AlarmModule::TimerEventHandler (u16 passedTimeDs, u32 appTimerDs)
+void AlarmModule::TimerEventHandler(u16 passedTimeDs, u32 appTimerDs)
 {
 	if (!configuration.moduleActive)
 		return;
 
-	if (SHOULD_IV_TRIGGER(appTimerDs, passedTimeDs, ALARM_MODULE_BROADCAST_TRIGGER_TIME))
+	if (SHOULD_IV_TRIGGER(appTimerDs, passedTimeDs, ALARM_MODULE_BROADCAST_TRIGGER_TIME_DS))
 	{
 		BroadcastPenguinAdvertisingPacket();
 	}
-	// Traffic jam timer: toggles bool to check for still standing vehicles
+
+	// Traffic jam timer
 	if (SHOULD_IV_TRIGGER(appTimerDs, passedTimeDs, ALARM_MODULE_TRAFFIC_JAM_DETECTION_TIME_DS))
 	{
-		checkTrafficJamTimer = true;
+		vector<vector<u16>> intersectionPool;
+
+		// Only add populated trafficJamPools to intersectionPool
+		for (size_t i = 0; i < trafficJamPools.size(); i++)
+		{
+			if (trafficJamPools.at(i).size() > 0)
+				intersectionPool.push_back(trafficJamPools.at(i));
+		}
+
+		// Check of traffic jam and reset pools
+		if (trafficJamInterval == 2)
+		{
+			if (intersectionPool.size() > 2)
+			{
+				// Min. 3 vehicles have not moved for ~6s
+				if (getIntersectionFromPool(intersectionPool).size() >= 3)
+					BroadcastAlarmUpdatePacket(GS->node.configuration.nodeId, SERVICE_INCIDENT_TYPE::TRAFFIC_JAM, SERVICE_ACTION_TYPE::SAVE);
+
+				// Max. 2 vehicles have not moved for ~6s
+				else
+					BroadcastAlarmUpdatePacket(GS->node.configuration.nodeId, SERVICE_INCIDENT_TYPE::BREAK_DOWN, SERVICE_ACTION_TYPE::SAVE);
+			}
+			else
+				BroadcastAlarmUpdatePacket(GS->node.configuration.nodeId, SERVICE_INCIDENT_TYPE::TRAFFIC_JAM, SERVICE_ACTION_TYPE::DELETE);
+
+			trafficJamPools.at(0).clear();
+			trafficJamPools.at(1).clear();
+			trafficJamPools.at(2).clear();
+			trafficJamPools.clear();
+		}
+
+		trafficJamInterval++;
+		if (trafficJamInterval > 2)
+			trafficJamInterval = 0;
 	}
+}
+
+/* Get intersection of multiple collections.
+ *
+ * @param vector<vector<u16>> sets, containing the traffic jam pools (total of 3) of nearby vehicles
+ *
+ * returns intersection of multiply collections
+ */
+vector<u16> getTrafficJamPoolIntersection(vector<vector<u16>> &sets)
+{
+	vector<u16> result;			  // To store the reaultant set
+	u16 smallSetInd = 0;		  // Initialize index of smallest set
+	u16 minSize = sets[0].size(); // Initialize size of smallest set
+
+	// sort all the sets, and also find the smallest set
+	for (u16 i = 1; i < sets.size(); i++)
+	{
+		// sort this set
+		sort(sets[i].begin(), sets[i].end());
+
+		// update minSize, if needed
+		if (minSize > sets[i].size())
+		{
+			minSize = sets[i].size();
+			smallSetInd = i;
+		}
+	}
+
+	map<u16, u16> elementsMap;
+
+	// Add all the elements of smallest set to a map, if already present, update the frequency
+	for (u16 i = 0; i < sets[smallSetInd].size(); i++)
+	{
+		if (elementsMap.find(sets[smallSetInd][i]) == elementsMap.end())
+			elementsMap[sets[smallSetInd][i]] = 1;
+		else
+			elementsMap[sets[smallSetInd][i]]++;
+	}
+
+	// iterate through the map elements to see if they are present in remaining sets
+	map<u16, u16>::iterator it;
+	for (it = elementsMap.begin(); it != elementsMap.end(); ++it)
+	{
+		u16 elem = it->first;
+		u16 freq = it->second;
+
+		bool bFound = true;
+
+		// Iterate through all sets
+		for (u16 j = 0; j < sets.size(); j++)
+		{
+			// If this set is not the smallest set, then do binary search in it
+			if (j != smallSetInd)
+			{
+				// If the element is found in this set, then find its frequency
+				if (binary_search(sets[j].begin(), sets[j].end(), elem))
+				{
+					u16 lInd = lower_bound(sets[j].begin(), sets[j].end(), elem) - sets[j].begin();
+					u16 rInd = upper_bound(sets[j].begin(), sets[j].end(), elem) - sets[j].begin();
+
+					// Update the minimum frequency, if needed
+					if ((rInd - lInd) < freq)
+						freq = rInd - lInd;
+				}
+				// If the element is not present in any set, then no need to proceed for this element.
+				else
+				{
+					bFound = false;
+					break;
+				}
+			}
+		}
+
+		// If element was found in all sets, then add it to result 'freq' times
+		if (bFound)
+		{
+			for (u16 k = 0; k < freq; k++)
+				result.push_back(elem);
+		}
+	}
+	return result;
 }
 
 void AlarmModule::GpioInit()
@@ -583,34 +604,19 @@ void AlarmModule::GapAdvertisementReportEventHandler(const GapAdvertisementRepor
 			 packetData->isJam);
 
 		// Check for same directions of beacon and vehicle
+		// TODO: consider direction ranges (N, NE, E, SE, S, SW, W, NW)
 		if (packetData->direction == GS->node.configuration.direction)
 		{
-			// Save deviceID of nearby vehicle
-			if (!checkTrafficJamTimer)
-			{
-				prevDeviceID = packetData->deviceID;
-			}
-			// Check for same deviceID after 5s timer (see TimerEventHandler)
-			// Vehicle is not moving => initiate traffic jam alarm
-			else if (prevDeviceID == packetData->deviceID)
-			{
-				// Check if left node has traffic jam alarm activated
-				SendModuleActionMessage(MessageType::MODULE_TRIGGER_ACTION,
-										GS->node.configuration.nodeId + 2, // targetNode = left node
-										(u8)TrafficJamTriggerActionMessages::TRIGGER_CHECK_LEFT_NODE,
-										0,
-										0,
-										0,
-										false);
-				checkTrafficJamTimer = false;
-			}
-			// Vehicle is moving => deactivate traffic jam alarm
-			else
-			{
-				nearestTrafficJamNodeId = 0;
-				BroadcastAlarmUpdatePacket(GS->node.configuration.nodeId, SERVICE_INCIDENT_TYPE::TRAFFIC_JAM, SERVICE_ACTION_TYPE::DELETE);
-				checkTrafficJamTimer = false;
-			}
+			addToTrafficJamPool(trafficJamPools.at(trafficJamInterval), packetData->deviceID);
 		}
 	}
+}
+
+void addToTrafficJamPool(vector<u16> &pool, u16 deviceID)
+{
+	if (pool.size() >= 10)
+		pool.erase(pool.begin());
+
+	if (find(pool.begin(), pool.end(), deviceID) == pool.end())
+		pool.push_back(deviceID);
 }
