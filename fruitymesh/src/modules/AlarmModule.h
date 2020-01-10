@@ -40,6 +40,7 @@ using namespace std;
 #define ALARM_MODULE_TRAFFIC_JAM_DETECTION_TIME_DS 20
 #define ASSET_PACKET_BUFFER_SIZE 30
 #define ALARM_MODULE_TRAFFIC_JAM_WARNING_RANGE 50
+#define TRAFFIC_JAM_POOL_SIZE 10
 
 //Service Data (max. 24 byte)
 #define SIZEOF_ADV_STRUCTURE_ALARM_SERVICE_DATA 22 //ToDo
@@ -199,7 +200,11 @@ private:
 	u8 gpioState;
 
 	u8 trafficJamInterval;
-	vector<vector<u16>> trafficJamPools;
+	SimpleArray<u8, 3> trafficJamPoolStates;
+	SimpleArray<u16, TRAFFIC_JAM_POOL_SIZE> trafficJamPool1;
+	SimpleArray<u16, TRAFFIC_JAM_POOL_SIZE> trafficJamPool2;
+	SimpleArray<u16, TRAFFIC_JAM_POOL_SIZE> trafficJamPool3;
+
 
 #pragma pack(pop)
 
@@ -233,9 +238,7 @@ public:
 
 	void UpdateGpioState();
 	
-	void addToTrafficJamPool(vector<u16> &pool, u16 deviceID);
-
-	vector<u16> getIntersectionFromPool(vector<vector<u16>> &sets);
+	int intersection(SimpleArray<u16, TRAFFIC_JAM_POOL_SIZE> a, SimpleArray<u16, TRAFFIC_JAM_POOL_SIZE> b, SimpleArray<u16, TRAFFIC_JAM_POOL_SIZE> c);
 
 	virtual void GapAdvertisementReportEventHandler(const GapAdvertisementReportEvent& advertisementReportEvent) override;
 };

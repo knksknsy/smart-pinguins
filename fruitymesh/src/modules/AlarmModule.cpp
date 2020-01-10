@@ -53,6 +53,7 @@ AlarmModule::AlarmModule() : Module(ModuleId::ALARM_MODULE, "alarm")
 	//Start module configuration loading
 	configurationPointer = &configuration;
 	configurationLength = sizeof(AlarmModuleConfiguration);
+
 	alarmJobHandle = NULL;
 
 	//CONFIG
@@ -65,6 +66,10 @@ AlarmModule::AlarmModule() : Module(ModuleId::ALARM_MODULE, "alarm")
 	nearestRescueLaneOppositeLaneNodeId = 0;
 
 	trafficJamInterval = 0;
+	trafficJamPoolStates.setAllBytesTo(0);
+	trafficJamPool1.setAllBytesTo(0);
+	trafficJamPool2.setAllBytesTo(0);
+	trafficJamPool3.setAllBytesTo(0);
 
 	GpioInit();
 
@@ -429,35 +434,40 @@ void AlarmModule::TimerEventHandler(u16 passedTimeDs, u32 appTimerDs)
 	// Traffic jam timer
 	if (SHOULD_IV_TRIGGER(appTimerDs, passedTimeDs, ALARM_MODULE_TRAFFIC_JAM_DETECTION_TIME_DS))
 	{
-		vector<vector<u16>> intersectionPool;
-
-		// Only add populated trafficJamPools to intersectionPool
-		for (size_t i = 0; i < trafficJamPools.size(); i++)
+		if (trafficJamPool1.size() > 0)
 		{
-			if (trafficJamPools.at(i).size() > 0)
-				intersectionPool.push_back(trafficJamPools.at(i));
+			trafficJamPoolStates[0] = 1;
+		}
+		if (trafficJamPool2.size() > 0)
+		{
+			trafficJamPoolStates[1] = 1;
+		}
+		if (trafficJamPool3.size() > 0)
+		{
+			trafficJamPoolStates[2] = 1;
 		}
 
 		// Check of traffic jam and reset pools
 		if (trafficJamInterval == 2)
 		{
-			if (intersectionPool.size() > 2)
+			if (trafficJamPoolStates.size() > 2)
 			{
 				// Min. 3 vehicles have not moved for ~6s
-				if (getIntersectionFromPool(intersectionPool).size() >= 3)
+				if (intersection(trafficJamPool1, trafficJamPool2, trafficJamPool3) >= 3)
 					BroadcastAlarmUpdatePacket(GS->node.configuration.nodeId, SERVICE_INCIDENT_TYPE::TRAFFIC_JAM, SERVICE_ACTION_TYPE::SAVE);
 
 				// Max. 2 vehicles have not moved for ~6s
+				// TODO: Implement BREAK_DOWN use case
 				else
 					BroadcastAlarmUpdatePacket(GS->node.configuration.nodeId, SERVICE_INCIDENT_TYPE::BREAK_DOWN, SERVICE_ACTION_TYPE::SAVE);
 			}
 			else
 				BroadcastAlarmUpdatePacket(GS->node.configuration.nodeId, SERVICE_INCIDENT_TYPE::TRAFFIC_JAM, SERVICE_ACTION_TYPE::DELETE);
 
-			trafficJamPools.at(0).clear();
-			trafficJamPools.at(1).clear();
-			trafficJamPools.at(2).clear();
-			trafficJamPools.clear();
+			trafficJamPool1.setAllBytesTo(0);
+			trafficJamPool2.setAllBytesTo(0);
+			trafficJamPool3.setAllBytesTo(0);
+			trafficJamPoolStates.setAllBytesTo(0);
 		}
 
 		trafficJamInterval++;
@@ -466,85 +476,43 @@ void AlarmModule::TimerEventHandler(u16 passedTimeDs, u32 appTimerDs)
 	}
 }
 
-/* Get intersection of multiple collections.
- *
- * @param vector<vector<u16>> sets, containing the traffic jam pools (total of 3) of nearby vehicles
- *
- * returns intersection of multiply collections
- */
-vector<u16> AlarmModule::getIntersectionFromPool(vector<vector<u16>> &sets)
+int AlarmModule::intersection(SimpleArray<u16, TRAFFIC_JAM_POOL_SIZE> a, SimpleArray<u16, TRAFFIC_JAM_POOL_SIZE> b, SimpleArray<u16, TRAFFIC_JAM_POOL_SIZE> c)
 {
-	vector<u16> result;			  // To store the reaultant set
-	u16 smallSetInd = 0;		  // Initialize index of smallest set
-	u16 minSize = sets[0].size(); // Initialize size of smallest set
+	u8 m = a.size();
+	u8 n = b.size();
+	u8 count = 0;
+	SimpleArray<u16, TRAFFIC_JAM_POOL_SIZE> ab;
+	SimpleArray<u16, TRAFFIC_JAM_POOL_SIZE> abc;
+	ab.setAllBytesTo(0);
+	abc.setAllBytesTo(0);
 
-	// sort all the sets, and also find the smallest set
-	for (u16 i = 1; i < sets.size(); i++)
+	for (int i = 0; i < m; i++)
 	{
-		// sort this set
-		sort(sets[i].begin(), sets[i].end());
-
-		// update minSize, if needed
-		if (minSize > sets[i].size())
+		for (int j = 0; j < n; j++)
 		{
-			minSize = sets[i].size();
-			smallSetInd = i;
-		}
-	}
-
-	map<u16, u16> elementsMap;
-
-	// Add all the elements of smallest set to a map, if already present, update the frequency
-	for (u16 i = 0; i < sets[smallSetInd].size(); i++)
-	{
-		if (elementsMap.find(sets[smallSetInd][i]) == elementsMap.end())
-			elementsMap[sets[smallSetInd][i]] = 1;
-		else
-			elementsMap[sets[smallSetInd][i]]++;
-	}
-
-	// iterate through the map elements to see if they are present in remaining sets
-	map<u16, u16>::iterator it;
-	for (it = elementsMap.begin(); it != elementsMap.end(); ++it)
-	{
-		u16 elem = it->first;
-		u16 freq = it->second;
-
-		bool bFound = true;
-
-		// Iterate through all sets
-		for (u16 j = 0; j < sets.size(); j++)
-		{
-			// If this set is not the smallest set, then do binary search in it
-			if (j != smallSetInd)
+			if (a[i] == b[j])
 			{
-				// If the element is found in this set, then find its frequency
-				if (binary_search(sets[j].begin(), sets[j].end(), elem))
-				{
-					u16 lInd = lower_bound(sets[j].begin(), sets[j].end(), elem) - sets[j].begin();
-					u16 rInd = upper_bound(sets[j].begin(), sets[j].end(), elem) - sets[j].begin();
-
-					// Update the minimum frequency, if needed
-					if ((rInd - lInd) < freq)
-						freq = rInd - lInd;
-				}
-				// If the element is not present in any set, then no need to proceed for this element.
-				else
-				{
-					bFound = false;
-					break;
-				}
+				ab[count] = a[i];
+				count++;
 			}
 		}
+	}
 
-		// If element was found in all sets, then add it to result 'freq' times
-		if (bFound)
+	m = ab.size();
+	n = c.size();
+	count = 0;
+	for (int i = 0; i < m; i++)
+	{
+		for (int j = 0; j < n; j++)
 		{
-			for (u16 k = 0; k < freq; k++)
-				result.push_back(elem);
+			if (ab[i] == c[j])
+			{
+				abc[count] = ab[i];
+				count++;
+			}
 		}
 	}
-	return result;
+	return abc.size();
 }
 
 void AlarmModule::GpioInit()
@@ -607,16 +575,30 @@ void AlarmModule::GapAdvertisementReportEventHandler(const GapAdvertisementRepor
 		// TODO: consider direction ranges (N, NE, E, SE, S, SW, W, NW)
 		if (packetData->direction == GS->node.configuration.direction)
 		{
-			addToTrafficJamPool(trafficJamPools.at(trafficJamInterval), packetData->deviceID);
+			if (trafficJamInterval == 0)
+			{
+				if (trafficJamPool1.size() >= TRAFFIC_JAM_POOL_SIZE)
+					trafficJamPool1.pop_front();
+
+				if (trafficJamPool1.has(packetData->deviceID))
+					trafficJamPool1[trafficJamPool1.size()] = packetData->deviceID;
+			}
+			if (trafficJamInterval == 1)
+			{
+				if (trafficJamPool2.size() >= TRAFFIC_JAM_POOL_SIZE)
+					trafficJamPool2.pop_front();
+
+				if (trafficJamPool2.has(packetData->deviceID))
+					trafficJamPool2[trafficJamPool2.size()] = packetData->deviceID;
+			}
+			if (trafficJamInterval == 2)
+			{
+				if (trafficJamPool3.size() >= TRAFFIC_JAM_POOL_SIZE)
+					trafficJamPool2.pop_front();
+
+				if (trafficJamPool3.has(packetData->deviceID))
+					trafficJamPool3[trafficJamPool3.size()] = packetData->deviceID;
+			}
 		}
 	}
-}
-
-void AlarmModule::addToTrafficJamPool(vector<u16> &pool, u16 deviceID)
-{
-	if (pool.size() >= 10)
-		pool.erase(pool.begin());
-
-	if (find(pool.begin(), pool.end(), deviceID) == pool.end())
-		pool.push_back(deviceID);
 }

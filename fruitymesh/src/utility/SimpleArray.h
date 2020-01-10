@@ -34,6 +34,7 @@
 #endif
 
 #include <cstring>
+#include <stdbool.h>
 #include "types.h"
 
 template<typename T, int N>
@@ -86,5 +87,31 @@ public:
 		}
 #endif
 		memset(data, value, sizeof(T) * length);	//CODE_ANALYZER_IGNORE Must be possible to compile for non pod types (cause it's a template), but wont be executed.
+	}
+
+	inline int size() {
+		int s = 0;
+		for (int i = 0; i < length; i++) {
+			if (data[i] != 0) {
+				s++;
+			}
+		}
+		return s;
+	}
+
+	inline bool has(T o) {
+		for (int i = 0; i < length; i++) {
+			if (data[i] == o) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	inline void pop_front() {
+		for (int i = 0; i < length - 1; i++) {
+			data[i] = data[i + 1];
+		}
+		data[length - 1] = 0;
 	}
 };
