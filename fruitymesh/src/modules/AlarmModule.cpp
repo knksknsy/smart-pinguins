@@ -572,8 +572,9 @@ void AlarmModule::GapAdvertisementReportEventHandler(const GapAdvertisementRepor
 			 packetData->isJam);
 
 		// Check for same directions of beacon and vehicle
+		// TODO: change value for deviceType
 		// TODO: consider direction ranges (N, NE, E, SE, S, SW, W, NW)
-		if (packetData->direction == GS->node.configuration.direction)
+		if (packetData->deviceType == 0 && packetData->direction == GS->node.configuration.direction)
 		{
 			if (trafficJamInterval == 0)
 			{
