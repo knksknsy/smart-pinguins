@@ -241,35 +241,6 @@ STATIC_ASSERT_SIZE(advPacketAssetServiceData, SIZEOF_ADV_STRUCTURE_ASSET_SERVICE
 
 #pragma pack(pop)
 
-//####### AdvPacketCarData Tracking #################################################
-#define SERVICE_DATA_MESSAGE_TYPE_CAR 0x03
-
-#pragma pack(push)
-#pragma pack(1)
-
-//Service Data (max. 24 byte)
-#define SIZEOF_ADV_STRUCTURE_CAR_SERVICE_DATA 11
-typedef struct
-{
-	//6 byte header
-	u16 mway_servicedata;
-    u8 len;  
-    u8 type;
-    u16 messageType; //0x03 for Car Data Service
-
-    //5 byte car information (Können/sollten auch nur als Bits gesetzt werden)
-    u8 advChannel; //Wird entfernt
-    u8 deviceType; //Car / bicycle / pederstiant
-    u8 direction; //1= North / 4=East / 2-3 = NorthEast etc.
-    u8 isEmergency;
-    u8 isSlippery;
-
-}advPacketCarServiceData;
-STATIC_ASSERT_SIZE(advPacketCarServiceData, SIZEOF_ADV_STRUCTURE_CAR_SERVICE_DATA);
-
-#pragma pack(pop)
-
-
 //####### Further definitions #################################################
 
 /*

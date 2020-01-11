@@ -237,6 +237,7 @@ typedef struct meshServiceStruct_temporary
 		u8 networkKey[16];
 		u8 userBaseKey[16];
 		u8 organizationKey[16];
+		u8 direction;
 	};
 #pragma pack(pop)
 
