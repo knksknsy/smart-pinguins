@@ -4,4 +4,6 @@ class Alarm(
     val nearestBlackIceNode: Int,
     val nearestRescueLaneNodeId: Int,
     val nearestTrafficJamNodeId: Int,
-    val currentNode: Int)
+    val currentNode: Int,
+    val isBikeNear: Boolean
+)

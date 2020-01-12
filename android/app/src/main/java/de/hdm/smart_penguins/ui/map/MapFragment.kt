@@ -44,10 +44,8 @@ class MapFragment : Fragment(), OnMapReadyCallback {
 
     private var gMap: GoogleMap? = null
     private var mapFragment: SupportMapFragment? = null
-    private var setupMode = false
     private var bottomSheetBehavior: BottomSheetBehavior<View>? = null
     private var positionMarker: Marker? = null
-    private var isLocationEnabled = false
 
 
     override fun onCreateView(
