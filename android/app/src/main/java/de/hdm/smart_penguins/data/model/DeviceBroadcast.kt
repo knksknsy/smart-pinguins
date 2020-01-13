@@ -15,8 +15,8 @@ class DeviceBroadcast {
     var messageType: Int = VAR_NOT_SET
     var deviceType: Int = VAR_NOT_SET
     var direction: Int = VAR_NOT_SET
-    var isSlippery: Boolean = false
     var isEmergency: Boolean = false
+    var isSlippery: Boolean = false
     var isJam: Boolean = false
     var deviceId: Int = VAR_NOT_SET
 
@@ -37,8 +37,8 @@ class DeviceBroadcast {
         setShort(byteArray, 2, messageType)
         setUnsignedChar(byteArray, 4, deviceType)
         setUnsignedChar(byteArray, 5, direction)
-        setUnsignedChar(byteArray, 6, ternary(isSlippery, 1, 0))
-        setUnsignedChar(byteArray, 7, ternary(isEmergency, 1, 0))
+        setUnsignedChar(byteArray, 6, ternary(isEmergency, 1, 0))
+        setUnsignedChar(byteArray, 7, ternary(isSlippery, 1, 0))
         setUnsignedChar(byteArray, 8, ternary(isJam, 1, 0))
         setUnsignedChar(byteArray, 9, deviceId);
         return byteArray
@@ -51,8 +51,8 @@ class DeviceBroadcast {
         messageType = parser.readSwappedUnsignedShort(byteArray)
         deviceType = parser.readSwappedUnsignedByte(byteArray).toInt()
         direction = parser.readSwappedUnsignedByte(byteArray).toInt()
-        isSlippery = parser.readSwappedUnsignedByte(byteArray).toInt() == 1
         isEmergency = parser.readSwappedUnsignedByte(byteArray).toInt() == 1
+        isSlippery = parser.readSwappedUnsignedByte(byteArray).toInt() == 1
         isJam = parser.readSwappedUnsignedByte(byteArray).toInt() == 1
         deviceId = parser.readSwappedUnsignedByte(byteArray).toInt()
         return this
