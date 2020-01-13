@@ -51,12 +51,9 @@ typedef struct {
     u8 type; 
     u16 uuid;
     u16 messageType;
-    //1 byte capabilities
-    u8 advertisingChannel :2;// 0 = not available, 1=37, 2=38, 3=39
  
-    //3 byte additional beacon information
+    //2 byte additional beacon information
     u8 nodeId;
-    i8 txPower;
     u8 boardType; //Nur für Debugging
  
     //3 byte cluster information
@@ -64,14 +61,13 @@ typedef struct {
     u8 clusterSize;
     u8 networkId; //Nur für Debugging
  
-    //6 Byte Penguin Information
+    //7 Byte Penguin Information
 	u8 nearestTrafficJamNodeId;
 	u8 nearestBlackIceNodeId;
 	u8 nearestRescueLaneNodeId;
 	u8 nearestTrafficJamOppositeLaneNodeId;
 	u8 nearestBlackIceOppositeLaneNodeId;
 	u8 nearestRescueLaneOppositeLaneNodeId;
-
 	u8 direction;
 }AdvPacketPenguinData;
 
@@ -192,6 +188,8 @@ private:
 	u8 nearestTrafficJamOppositeLaneNodeId;
 	u8 nearestBlackIceOppositeLaneNodeId;
 	u8 nearestRescueLaneOppositeLaneNodeId;
+
+	bool mockedBlackIceIsSet;
 
 	AlarmModuleConfiguration configuration;
 	AdvJob* alarmJobHandle;

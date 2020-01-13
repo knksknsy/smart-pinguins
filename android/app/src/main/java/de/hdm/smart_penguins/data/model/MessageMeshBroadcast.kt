@@ -18,6 +18,9 @@ class MessageMeshBroadcast(bytes: ByteArray) {
     val nearestTrafficJamNodeId = parser.readSwappedUnsignedByte(bytes)
     val nearestBlackIceNodeId = parser.readSwappedUnsignedByte(bytes)
     val nearestRescueLaneNodeId = parser.readSwappedUnsignedByte(bytes)
+    var nearestTrafficJamOppositeLaneNodeId = parser.readSwappedUnsignedByte(bytes)
+    var nearestBlackIceOppositeLaneNodeId = parser.readSwappedUnsignedByte(bytes)
+    var nearestRescueLaneOppositeLaneNodeId = parser.readSwappedUnsignedByte(bytes)
     val direction = parser.readSwappedUnsignedByte(bytes)
 }
 

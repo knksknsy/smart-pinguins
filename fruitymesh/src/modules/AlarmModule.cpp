@@ -71,6 +71,8 @@ AlarmModule::AlarmModule() : Module(ModuleId::ALARM_MODULE, "alarm")
 	trafficJamPool2.setAllBytesTo(0);
 	trafficJamPool3.setAllBytesTo(0);
 
+	mockedBlackIceIsSet = false;
+
 	GpioInit();
 
 	//Start Broadcasting the informations
@@ -91,7 +93,13 @@ void AlarmModule::ButtonHandler(u8 buttonId, u32 holdTimeDs)
 	UpdateGpioState();
 
 	// Broadcast a rescue lane alarm
-	BroadcastAlarmUpdatePacket(GS->node.configuration.nodeId, SERVICE_INCIDENT_TYPE::RESCUE_LANE, SERVICE_ACTION_TYPE::SAVE);
+	if(!mockedBlackIceIsSet) {
+		BroadcastAlarmUpdatePacket(GS->node.configuration.nodeId, SERVICE_INCIDENT_TYPE::BLACK_ICE, SERVICE_ACTION_TYPE::SAVE);
+		mockedBlackIceIsSet = true;
+	} else {
+		BroadcastAlarmUpdatePacket(GS->node.configuration.nodeId, SERVICE_INCIDENT_TYPE::BLACK_ICE, SERVICE_ACTION_TYPE::DELETE);
+		mockedBlackIceIsSet = false;
+	}
 }
 
 void AlarmModule::BlinkGreenLed()
@@ -234,12 +242,9 @@ void AlarmModule::BroadcastPenguinAdvertisingPacket()
 	}
 	alarmData->direction =GS->node.configuration.direction;
 
-	alarmData->advertisingChannel = currentAdvChannel + 1;
-
 	//logt("ALARM_SYSTEM", "unsecureCount: %u", meshDeviceIdArray.size());
 
 	alarmData->nodeId = GS->node.configuration.nodeId;
-	alarmData->txPower = Boardconfig->calibratedTX;
 
 	//logt("ALARM_SYSTEM", "txPower: %u", Boardconfig->calibratedTX);
 
@@ -435,27 +440,19 @@ void AlarmModule::TimerEventHandler(u16 passedTimeDs, u32 appTimerDs)
 	// Traffic jam timer
 	if (SHOULD_IV_TRIGGER(appTimerDs, passedTimeDs, ALARM_MODULE_TRAFFIC_JAM_DETECTION_TIME_DS))
 	{
-		if (intersection(trafficJamPool1, trafficJamPool2, trafficJamPool3) > 0)
-		{
+		if (nearestTrafficJamNodeId != GS->node.configuration.nodeId && intersection(trafficJamPool1, trafficJamPool2, trafficJamPool3) > 0)
 			BroadcastAlarmUpdatePacket(GS->node.configuration.nodeId, SERVICE_INCIDENT_TYPE::TRAFFIC_JAM, SERVICE_ACTION_TYPE::SAVE);
-		}
 		else if (nearestTrafficJamNodeId == GS->node.configuration.nodeId)
-		{
 			BroadcastAlarmUpdatePacket(GS->node.configuration.nodeId, SERVICE_INCIDENT_TYPE::TRAFFIC_JAM, SERVICE_ACTION_TYPE::DELETE);
-		}
 
 		if (trafficJamInterval == 0)
-		{
 			trafficJamPool1.setAllBytesTo(0);
-		}
+
 		if (trafficJamInterval == 1)
-		{
 			trafficJamPool2.setAllBytesTo(0);
-		}
+		
 		if (trafficJamInterval == 2)
-		{
 			trafficJamPool3.setAllBytesTo(0);
-		}
 
 		trafficJamInterval++;
 		if (trafficJamInterval > 2)
