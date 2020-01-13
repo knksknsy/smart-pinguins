@@ -51,9 +51,11 @@ typedef struct {
     u8 type; 
     u16 uuid;
     u16 messageType;
+	u8 advertisingChannel :2;// 0 = not available, 1=37, 2=38, 3=39
  
-    //2 byte additional beacon information
+    //3 byte additional beacon information
     u8 nodeId;
+	i8 txPower;
     u8 boardType; //Nur für Debugging
  
     //3 byte cluster information

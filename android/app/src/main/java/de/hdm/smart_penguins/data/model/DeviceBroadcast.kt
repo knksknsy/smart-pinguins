@@ -40,7 +40,7 @@ class DeviceBroadcast {
         setUnsignedChar(byteArray, 6, ternary(isEmergency, 1, 0))
         setUnsignedChar(byteArray, 7, ternary(isSlippery, 1, 0))
         setUnsignedChar(byteArray, 8, ternary(isJam, 1, 0))
-        setUnsignedChar(byteArray, 9, deviceId);
+        setShort(byteArray, 9, deviceId);
         return byteArray
     }
 
@@ -54,7 +54,7 @@ class DeviceBroadcast {
         isEmergency = parser.readSwappedUnsignedByte(byteArray).toInt() == 1
         isSlippery = parser.readSwappedUnsignedByte(byteArray).toInt() == 1
         isJam = parser.readSwappedUnsignedByte(byteArray).toInt() == 1
-        deviceId = parser.readSwappedUnsignedByte(byteArray).toInt()
+        deviceId = parser.readSwappedUnsignedShort(byteArray)
         return this
     }
 
