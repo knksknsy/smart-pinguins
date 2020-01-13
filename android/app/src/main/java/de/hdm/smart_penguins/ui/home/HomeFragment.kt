@@ -64,8 +64,7 @@ class HomeFragment : BaseFragment() {
 
                     if(locker == false) {
                         locker = true
-                        finishFlag = execCase(cases)
-                        locker = false
+                        finishFlag = execCase(cases, locker)
                         val timerReset = object: CountDownTimer(30000, 1000) {
                             override fun onTick(millisUntilFinished: Long) {
                                 //Log.e("Tick:","Timer running")
@@ -75,6 +74,7 @@ class HomeFragment : BaseFragment() {
                                 Log.e("Timer:","Timer reset")
                             }
                         }.start()
+                        locker = finishFlag
                     }
                     else{
                         Log.e("Function blocker","Old function in pipeline")
@@ -94,7 +94,8 @@ class HomeFragment : BaseFragment() {
         })
     }
 
-    private fun execCase(cases: MutableList<String>): Boolean {
+    private fun execCase(cases: MutableList<String>, locker: Boolean): Boolean {
+        var locker = locker
         val caseSize = cases.size
         val timeInterval: Long = 7000
         val timeAll: Long = caseSize.toLong() * timeInterval
@@ -110,10 +111,11 @@ class HomeFragment : BaseFragment() {
 
             override fun onFinish() {
                 setVisibility("reset")
+                locker = false
             }
         }.start()
 
-        return true
+        return locker
     }
 
     private fun BEISPIELZUMAENDERNDERBROADCASTNACHRICHT() {
