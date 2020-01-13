@@ -443,27 +443,19 @@ void AlarmModule::TimerEventHandler(u16 passedTimeDs, u32 appTimerDs)
 	// Traffic jam timer
 	if (SHOULD_IV_TRIGGER(appTimerDs, passedTimeDs, ALARM_MODULE_TRAFFIC_JAM_DETECTION_TIME_DS))
 	{
-		if (intersection(trafficJamPool1, trafficJamPool2, trafficJamPool3) > 0)
-		{
+		if (nearestTrafficJamNodeId != GS->node.configuration.nodeId && intersection(trafficJamPool1, trafficJamPool2, trafficJamPool3) > 0)
 			BroadcastAlarmUpdatePacket(GS->node.configuration.nodeId, SERVICE_INCIDENT_TYPE::TRAFFIC_JAM, SERVICE_ACTION_TYPE::SAVE);
-		}
 		else if (nearestTrafficJamNodeId == GS->node.configuration.nodeId)
-		{
 			BroadcastAlarmUpdatePacket(GS->node.configuration.nodeId, SERVICE_INCIDENT_TYPE::TRAFFIC_JAM, SERVICE_ACTION_TYPE::DELETE);
-		}
 
 		if (trafficJamInterval == 0)
-		{
 			trafficJamPool1.setAllBytesTo(0);
-		}
+
 		if (trafficJamInterval == 1)
-		{
 			trafficJamPool2.setAllBytesTo(0);
-		}
+		
 		if (trafficJamInterval == 2)
-		{
 			trafficJamPool3.setAllBytesTo(0);
-		}
 
 		trafficJamInterval++;
 		if (trafficJamInterval > 2)

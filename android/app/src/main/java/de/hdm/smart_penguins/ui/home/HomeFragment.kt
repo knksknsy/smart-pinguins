@@ -33,16 +33,25 @@ class HomeFragment : BaseFragment() {
 
         })
 
-        var alarmNode = 1
-        var oldNode = 0
+        var alarmNode = 0
+        //var oldNode = 0
+        var oldNodes = ArrayList<Int>()
+
+        val timer = object: CountDownTimer(30000, 1000) {
+            override fun onTick(millisUntilFinished: Long) {}
+            override fun onFinish() {
+                oldNodes.clear()
+            }
+        }
 
         alarm.observe(this, Observer { alarm ->
-            //Todo: In Abhängigkeit zur Richtung muss Evaluation mit Grösser oder Kleiner sein
             whenNotNull(alarm) {
                 alarmNode = alarm.currentNode
-
-                if (alarmNode != oldNode) {
-                    oldNode = alarmNode
+                
+                //if(alarmNode != oldNode) {
+                if(alarmNode !in oldNodes){
+                    //oldNode = alarmNode
+                    oldNodes.add(alarmNode)
                     val cases = mutableListOf<String>()
                     var finishFlag = false
 
@@ -58,13 +67,14 @@ class HomeFragment : BaseFragment() {
                     cases.add("")
 
                     finishFlag = execCase(cases)
-                    //setVisibility(root, "reset")
                 }
 
                 Log.e("Emergency", alarm.nearestRescueLaneNodeId.toString())
                 Log.e("Jam", alarm.nearestTrafficJamNodeId.toString())
                 Log.e("Blackice", alarm.nearestBlackIceNode.toString())
                 Log.e("Device Nr", alarm.currentNode.toString())
+
+                timer.start()
             }
         })
     }
