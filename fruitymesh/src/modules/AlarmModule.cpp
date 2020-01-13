@@ -93,7 +93,7 @@ void AlarmModule::ButtonHandler(u8 buttonId, u32 holdTimeDs)
 	UpdateGpioState();
 
 	// Broadcast a rescue lane alarm
-	if(mockedBlackIceIsSet) {
+	if(!mockedBlackIceIsSet) {
 		BroadcastAlarmUpdatePacket(GS->node.configuration.nodeId, SERVICE_INCIDENT_TYPE::BLACK_ICE, SERVICE_ACTION_TYPE::SAVE);
 		mockedBlackIceIsSet = true;
 	} else {
