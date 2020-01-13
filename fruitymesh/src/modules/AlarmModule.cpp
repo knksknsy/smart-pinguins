@@ -242,12 +242,9 @@ void AlarmModule::BroadcastPenguinAdvertisingPacket()
 	}
 	alarmData->direction =GS->node.configuration.direction;
 
-	alarmData->advertisingChannel = currentAdvChannel + 1;
-
 	//logt("ALARM_SYSTEM", "unsecureCount: %u", meshDeviceIdArray.size());
 
 	alarmData->nodeId = GS->node.configuration.nodeId;
-	alarmData->txPower = Boardconfig->calibratedTX;
 
 	//logt("ALARM_SYSTEM", "txPower: %u", Boardconfig->calibratedTX);
 
