@@ -16,6 +16,8 @@ class HomeFragment : BaseFragment() {
 
     private var root: View? = null
 
+    private val TYPE_EMERGENCY = 1
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -41,13 +43,14 @@ class HomeFragment : BaseFragment() {
             override fun onTick(millisUntilFinished: Long) {}
             override fun onFinish() {
                 oldNodes.clear()
+                Log.e("Timer:","Timer reset")
             }
-        }
+        }.start()
 
         alarm.observe(this, Observer { alarm ->
             whenNotNull(alarm) {
                 alarmNode = alarm.currentNode
-                
+
                 //if(alarmNode != oldNode) {
                 if(alarmNode !in oldNodes){
                     //oldNode = alarmNode
@@ -68,13 +71,15 @@ class HomeFragment : BaseFragment() {
 
                     finishFlag = execCase(cases)
                 }
+                else{
+                    Log.e("OldNodes",oldNodes.toString())
+                }
 
                 Log.e("Emergency", alarm.nearestRescueLaneNodeId.toString())
                 Log.e("Jam", alarm.nearestTrafficJamNodeId.toString())
                 Log.e("Blackice", alarm.nearestBlackIceNode.toString())
                 Log.e("Device Nr", alarm.currentNode.toString())
 
-                timer.start()
             }
         })
     }

@@ -8,11 +8,14 @@ import android.widget.Button
 import android.widget.ImageButton
 import androidx.lifecycle.ViewModelProviders
 import de.hdm.smart_penguins.R
-import de.hdm.smart_penguins.data.manager.DataManager
+import de.hdm.smart_penguins.data.Constants
 import de.hdm.smart_penguins.ui.BaseFragment
+import kotlinx.android.synthetic.main.fragment_dashboard.*
 
 
 class DashboardFragment : BaseFragment() {
+
+
 
     private lateinit var dashboardViewModel: DashboardViewModel
 
@@ -37,72 +40,104 @@ class DashboardFragment : BaseFragment() {
         val left_btn: ImageButton = root.findViewById(R.id.left_btn)
         val right_btn: ImageButton = root.findViewById(R.id.right_btn)
 
+        if(dataManager.device == Constants.DEVICE_TYPE_EMERGENCY){
+            emergency_btn.setBackgroundColor(resources.getColor(R.color.LightGrey))
+        } else if(dataManager.device == Constants.DEVICE_TYPE_BIKE) {
+            cycle_btn.setBackgroundColor(resources.getColor(R.color.LightGrey))
+        } else if (dataManager.device == Constants.DEVICE_TYPE_WALK) {
+            walk_btn.setBackgroundColor(resources.getColor(R.color.LightGrey))
+        }
+
+        if (dataManager.isLeftTurn) {
+            left_btn.setBackgroundColor(resources.getColor(R.color.Green))
+        } else if (dataManager.isRightTurn){
+            right_btn.setBackgroundColor(resources.getColor((R.color.Green)))
+        }
 
 
-        emergency_btn.setOnClickListener(View.OnClickListener {
-            if (emergencyState == false && cycleState == false && walkState == false) {
-                emergency_btn.setBackgroundColor(resources.getColor(R.color.LightGrey))
-                dataManager.device = 3
-                dataManager.isEmergency = true
-                emergencyState = true
-            } else {
-                emergency_btn.setBackgroundColor(resources.getColor(R.color.defaultBtn))
-                dataManager.device
-                dataManager.device = 1
-                dataManager.isEmergency = false
-                emergencyState = false
-            }
+        emergency_btn.setOnClickListener({
+            onResetDevice()
+            onEmergency()
         })
 
-        cycle_btn.setOnClickListener(View.OnClickListener {
-            if (emergencyState == false && cycleState == false && walkState == false) {
-                cycle_btn.setBackgroundColor(resources.getColor(R.color.LightGrey))
-                dataManager.device = 2
-                cycleState = true
-            }
-            else {
-                cycle_btn.setBackgroundColor(resources.getColor(R.color.defaultBtn))
-                dataManager.device = 1
-                cycleState = false
-            }
+        cycle_btn.setOnClickListener({
+            onResetDevice()
+            onCycle()
         })
 
-        walk_btn.setOnClickListener(View.OnClickListener {
-            if (emergencyState == false && cycleState == false && walkState == false) {
-                walk_btn.setBackgroundColor(resources.getColor(R.color.LightGrey))
-                dataManager.device = 4
-                walkState = true
-            } else {
-                walk_btn.setBackgroundColor(resources.getColor(R.color.defaultBtn))
-                dataManager.device = 1
-                walkState = false
-            }
+        walk_btn.setOnClickListener({
+            onResetDevice()
+            onWalk()
         })
 
-        left_btn.setOnClickListener(View.OnClickListener {
-            if (leftState == false && rightState == false) {
-                left_btn.setBackgroundColor(resources.getColor(R.color.Green))
-                dataManager.isLeftTurn = true
-                leftState = true
-            } else {
-                left_btn.setBackgroundColor(resources.getColor(R.color.defaultBtn))
-                dataManager.isLeftTurn = false
-                leftState = false
-            }
+        left_btn.setOnClickListener({
+            onResetIndicator()
+            onLeft()
         })
 
         right_btn.setOnClickListener(View.OnClickListener {
-            if (rightState == false && leftState == false) {
-                right_btn.setBackgroundColor(resources.getColor(R.color.Green))
-                dataManager.isRightTurn = true
-                rightState = true
-            } else {
-                right_btn.setBackgroundColor(resources.getColor(R.color.defaultBtn))
-                dataManager.isRightTurn = false
-                rightState = false
-            }
+            onResetIndicator()
+            onRight()
         })
 
         return root
+    }
+
+    private fun onResetDevice() {
+        emergency_btn.setBackgroundColor(resources.getColor(R.color.defaultBtn))
+        cycle_btn.setBackgroundColor(resources.getColor(R.color.defaultBtn))
+        walk_btn.setBackgroundColor(resources.getColor(R.color.defaultBtn))
+    }
+
+    private fun onResetIndicator() {
+        left_btn.setBackgroundColor(resources.getColor(R.color.defaultBtn))
+        right_btn.setBackgroundColor(resources.getColor(R.color.defaultBtn))
+    }
+
+    private fun onLeft() {
+        if (dataManager.isLeftTurn == false) {
+            left_btn.setBackgroundColor(resources.getColor(R.color.Green))
+            dataManager.isLeftTurn = true
+            dataManager.isRightTurn = false
+        } else {
+            dataManager.isLeftTurn = false
+        }
+    }
+
+    private fun onRight() {
+        if (dataManager.isRightTurn == false) {
+            right_btn.setBackgroundColor(resources.getColor(R.color.Green))
+            dataManager.isRightTurn = true
+            dataManager.isLeftTurn = false
+        } else {
+            dataManager.isRightTurn = false
+        }
+    }
+
+    private fun onEmergency() {
+        if (dataManager.device == Constants.DEVICE_TYPE_EMERGENCY) {
+            dataManager.device = Constants.DEVICE_TYPE_CAR
+        } else {
+            emergency_btn.setBackgroundColor(resources.getColor(R.color.LightGrey))
+            dataManager.device = Constants.DEVICE_TYPE_EMERGENCY
+        }
+    }
+
+    private fun onCycle() {
+        if (dataManager.device == Constants.DEVICE_TYPE_BIKE) {
+            dataManager.device = Constants.DEVICE_TYPE_CAR
+        } else {
+            cycle_btn.setBackgroundColor(resources.getColor(R.color.LightGrey))
+            dataManager.device = Constants.DEVICE_TYPE_BIKE
+        }
+    }
+
+    private fun onWalk() {
+        if (dataManager.device == Constants.DEVICE_TYPE_WALK) {
+            dataManager.device = Constants.DEVICE_TYPE_CAR
+        } else {
+            walk_btn.setBackgroundColor(resources.getColor(R.color.LightGrey))
+            dataManager.device = Constants.DEVICE_TYPE_WALK
+        }
     }
 }
