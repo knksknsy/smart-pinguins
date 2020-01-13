@@ -18,6 +18,7 @@ class DeviceBroadcast {
     var isSlippery: Boolean = false
     var isEmergency: Boolean = false
     var isJam: Boolean = false
+    var deviceId: Int = VAR_NOT_SET
 
 
     fun init(
@@ -28,7 +29,8 @@ class DeviceBroadcast {
         direction: Int,
         isSlippery: Boolean,
         isEmergency: Boolean,
-        isJam: Boolean
+        isJam: Boolean,
+        deviceId: Int
     ): ByteArray {
         setUnsignedChar(byteArray, 0, length)
         setUnsignedChar(byteArray, 1, type)
@@ -38,6 +40,7 @@ class DeviceBroadcast {
         setUnsignedChar(byteArray, 6, ternary(isSlippery, 1, 0))
         setUnsignedChar(byteArray, 7, ternary(isEmergency, 1, 0))
         setUnsignedChar(byteArray, 8, ternary(isJam, 1, 0))
+        setUnsignedChar(byteArray, 9, deviceId);
         return byteArray
     }
 
@@ -51,6 +54,7 @@ class DeviceBroadcast {
         isSlippery = parser.readSwappedUnsignedByte(byteArray).toInt() == 1
         isEmergency = parser.readSwappedUnsignedByte(byteArray).toInt() == 1
         isJam = parser.readSwappedUnsignedByte(byteArray).toInt() == 1
+        deviceId = parser.readSwappedUnsignedByte(byteArray).toInt()
         return this
     }
 
