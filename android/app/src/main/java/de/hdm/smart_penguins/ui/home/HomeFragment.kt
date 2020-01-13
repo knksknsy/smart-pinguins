@@ -38,14 +38,7 @@ class HomeFragment : BaseFragment() {
         var alarmNode = 0
         //var oldNode = 0
         var oldNodes = ArrayList<Int>()
-
-        val timer = object: CountDownTimer(30000, 1000) {
-            override fun onTick(millisUntilFinished: Long) {}
-            override fun onFinish() {
-                oldNodes.clear()
-                Log.e("Timer:","Timer reset")
-            }
-        }.start()
+        var locker = false
 
         alarm.observe(this, Observer { alarm ->
             whenNotNull(alarm) {
@@ -69,7 +62,24 @@ class HomeFragment : BaseFragment() {
                     }
                     cases.add("")
 
-                    finishFlag = execCase(cases)
+                    if(locker == false) {
+                        locker = true
+                        finishFlag = execCase(cases)
+                        locker = false
+                        val timerReset = object: CountDownTimer(30000, 1000) {
+                            override fun onTick(millisUntilFinished: Long) {
+                                //Log.e("Tick:","Timer running")
+                            }
+                            override fun onFinish() {
+                                oldNodes.clear()
+                                Log.e("Timer:","Timer reset")
+                            }
+                        }.start()
+                    }
+                    else{
+                        Log.e("Function blocker","Old function in pipeline")
+                    }
+
                 }
                 else{
                     Log.e("OldNodes",oldNodes.toString())
