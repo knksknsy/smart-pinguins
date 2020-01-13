@@ -92,6 +92,15 @@ class ConnectionManager @Inject constructor(
                         )
                         Log.e(TAG, "Received device broadcast")
                         if (deviceBroadcast.messageType == MESSAGE_TYPE_DEVICE_BROADCAST) {
+                            if(deviceBroadcast.type == Constants.DEVICE_TYPE_BIKE && dataManager.isRightTurn){
+                                alarm.value = Alarm(
+                                    0,
+                                    0,
+                                    0,
+                                    0,
+                                    true
+                                )
+                            }
                             continue
                         }
 
@@ -116,15 +125,16 @@ class ConnectionManager @Inject constructor(
 
     private fun checkNodeForAlarm(broadcast: MessageMeshBroadcast?) {
         if (broadcast != null
-            //&& directionAndNodeCheck(broadcast, broadcast.nearestBlackIceNodeId.toInt())
-            //&& directionAndNodeCheck(broadcast, broadcast.nearestRescueLaneNodeId.toInt())
-            //&& directionAndNodeCheck(broadcast, broadcast.nearestTrafficJamNodeId.toInt())
+          //  && directionAndNodeCheck(broadcast, broadcast.nearestBlackIceNodeId.toInt())
+          //  && directionAndNodeCheck(broadcast, broadcast.nearestRescueLaneNodeId.toInt())
+          //  && directionAndNodeCheck(broadcast, broadcast.nearestTrafficJamNodeId.toInt())
         ) {
             alarm.value = Alarm(
                 broadcast.nearestBlackIceNodeId.toInt(),
                 broadcast.nearestRescueLaneNodeId.toInt(),
                 broadcast.nearestTrafficJamNodeId.toInt(),
-                broadcast.deviceNumber.toInt()
+                broadcast.deviceNumber.toInt(),
+                false
             )
         } else {
             alarm.value = null

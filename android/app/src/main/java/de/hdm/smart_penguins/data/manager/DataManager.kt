@@ -24,6 +24,7 @@ class DataManager @Inject constructor(
     var device = Constants.DEVICE_TYPE_CAR
     var isRightTurn = false
     var isLeftTurn = false
+    var deviceId = 12324
 
 
     fun getDeviceBroadcast(): ByteArray {
@@ -35,7 +36,8 @@ class DataManager @Inject constructor(
             direction,
             isSlippery,
             isEmergency,
-            isJam
+            isJam,
+            deviceId
         )
     }
 }
