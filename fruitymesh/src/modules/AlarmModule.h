@@ -71,6 +71,8 @@ typedef struct {
 	u8 nearestTrafficJamOppositeLaneNodeId;
 	u8 nearestBlackIceOppositeLaneNodeId;
 	u8 nearestRescueLaneOppositeLaneNodeId;
+
+	u8 direction;
 }AdvPacketPenguinData;
 
 // Message from Mesh to Mesh
@@ -87,7 +89,6 @@ typedef struct {
     u8 len;  
     u8 type; 
     u16 messageType;
-	u16 deviceID;
  
     //5 byte car information (Können/sollten auch nur als Bits gesetzt werden)
     u8 deviceType; // Car, bicycle, pedestrian
@@ -95,6 +96,7 @@ typedef struct {
 	u8 isEmergency;
     u8 isSlippery;
 	u8 isJam;
+	u16 deviceID;
 }AdvPacketCarData;
 
 #define SIZE_ADV_PACKET_CAR_SERVICE_AND_DATA_HEADER 9
@@ -241,6 +243,8 @@ public:
 	int intersection(SimpleArray<u16, TRAFFIC_JAM_POOL_SIZE> a, SimpleArray<u16, TRAFFIC_JAM_POOL_SIZE> b, SimpleArray<u16, TRAFFIC_JAM_POOL_SIZE> c);
 
 	virtual void GapAdvertisementReportEventHandler(const GapAdvertisementReportEvent& advertisementReportEvent) override;
+
+	bool isMyDirection(u8 direction);
 };
 
 

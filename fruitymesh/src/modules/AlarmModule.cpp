@@ -232,6 +232,7 @@ void AlarmModule::BroadcastPenguinAdvertisingPacket()
 		alarmData->nearestTrafficJamOppositeLaneNodeId = nearestTrafficJamOppositeLaneNodeId;
 		alarmData->nearestBlackIceOppositeLaneNodeId = nearestBlackIceOppositeLaneNodeId;
 	}
+	alarmData->direction =GS->node.configuration.direction;
 
 	alarmData->advertisingChannel = currentAdvChannel + 1;
 
@@ -434,40 +435,26 @@ void AlarmModule::TimerEventHandler(u16 passedTimeDs, u32 appTimerDs)
 	// Traffic jam timer
 	if (SHOULD_IV_TRIGGER(appTimerDs, passedTimeDs, ALARM_MODULE_TRAFFIC_JAM_DETECTION_TIME_DS))
 	{
-		if (trafficJamPool1.size() > 0)
+		if (intersection(trafficJamPool1, trafficJamPool2, trafficJamPool3) > 0)
 		{
-			trafficJamPoolStates[0] = 1;
+			BroadcastAlarmUpdatePacket(GS->node.configuration.nodeId, SERVICE_INCIDENT_TYPE::TRAFFIC_JAM, SERVICE_ACTION_TYPE::SAVE);
 		}
-		if (trafficJamPool2.size() > 0)
+		else if (nearestTrafficJamNodeId == GS->node.configuration.nodeId)
 		{
-			trafficJamPoolStates[1] = 1;
-		}
-		if (trafficJamPool3.size() > 0)
-		{
-			trafficJamPoolStates[2] = 1;
+			BroadcastAlarmUpdatePacket(GS->node.configuration.nodeId, SERVICE_INCIDENT_TYPE::TRAFFIC_JAM, SERVICE_ACTION_TYPE::DELETE);
 		}
 
-		// Check of traffic jam and reset pools
+		if (trafficJamInterval == 0)
+		{
+			trafficJamPool1.setAllBytesTo(0);
+		}
+		if (trafficJamInterval == 1)
+		{
+			trafficJamPool2.setAllBytesTo(0);
+		}
 		if (trafficJamInterval == 2)
 		{
-			if (trafficJamPoolStates.size() > 2)
-			{
-				// Min. 3 vehicles have not moved for ~6s
-				if (intersection(trafficJamPool1, trafficJamPool2, trafficJamPool3) >= 3)
-					BroadcastAlarmUpdatePacket(GS->node.configuration.nodeId, SERVICE_INCIDENT_TYPE::TRAFFIC_JAM, SERVICE_ACTION_TYPE::SAVE);
-
-				// Max. 2 vehicles have not moved for ~6s
-				// TODO: Implement BREAK_DOWN use case
-				else
-					BroadcastAlarmUpdatePacket(GS->node.configuration.nodeId, SERVICE_INCIDENT_TYPE::BREAK_DOWN, SERVICE_ACTION_TYPE::SAVE);
-			}
-			else
-				BroadcastAlarmUpdatePacket(GS->node.configuration.nodeId, SERVICE_INCIDENT_TYPE::TRAFFIC_JAM, SERVICE_ACTION_TYPE::DELETE);
-
-			trafficJamPool1.setAllBytesTo(0);
-			trafficJamPool2.setAllBytesTo(0);
 			trafficJamPool3.setAllBytesTo(0);
-			trafficJamPoolStates.setAllBytesTo(0);
 		}
 
 		trafficJamInterval++;
@@ -485,34 +472,65 @@ int AlarmModule::intersection(SimpleArray<u16, TRAFFIC_JAM_POOL_SIZE> a, SimpleA
 	SimpleArray<u16, TRAFFIC_JAM_POOL_SIZE> abc;
 	ab.setAllBytesTo(0);
 	abc.setAllBytesTo(0);
+	SimpleArray<u16, TRAFFIC_JAM_POOL_SIZE> a1;
+	SimpleArray<u16, TRAFFIC_JAM_POOL_SIZE> b1;
+	a1.setAllBytesTo(0);
+	b1.setAllBytesTo(0);
+
+	if (a.size() == 0 && b.size() > 0 && c.size() > 0)
+	{
+		a1 = b;
+		b1 = c;
+	}
+	if (a.size() > 0 && b.size() == 0 && c.size() > 0)
+	{
+		a1 = a;
+		b1 = c;
+	}
+	if (a.size() > 0 && b.size() > 0 && c.size() == 0)
+	{
+		a1 = a;
+		b1 = b;
+	}
+
+	m = a1.size();
+	n = b1.size();
 
 	for (int i = 0; i < m; i++)
 	{
 		for (int j = 0; j < n; j++)
 		{
-			if (a[i] == b[j])
+			if (a1[i] == b1[j])
 			{
-				ab[count] = a[i];
+				ab[count] = a1[i];
 				count++;
 			}
 		}
 	}
 
-	m = ab.size();
-	n = c.size();
-	count = 0;
-	for (int i = 0; i < m; i++)
+	if (a.size() > 0 && b.size() > 0 && c.size() > 0)
 	{
-		for (int j = 0; j < n; j++)
+
+		m = ab.size();
+		n = c.size();
+		count = 0;
+		for (int i = 0; i < m; i++)
 		{
-			if (ab[i] == c[j])
+			for (int j = 0; j < n; j++)
 			{
-				abc[count] = ab[i];
-				count++;
+				if (ab[i] == c[j])
+				{
+					abc[count] = ab[i];
+					count++;
+				}
 			}
 		}
+		return abc.size();
 	}
-	return abc.size();
+	else
+	{
+		return ab.size();
+	}
 }
 
 void AlarmModule::GpioInit()
@@ -521,6 +539,15 @@ void AlarmModule::GpioInit()
 	nrf_gpio_cfg_output(PIN_OUT);
 	nrf_gpio_pin_set(PIN_OUT);
 	nrf_gpio_cfg_input(PIN_IN, NRF_GPIO_PIN_NOPULL);
+}
+
+bool AlarmModule::isMyDirection(u8 direction)
+{
+	if (abs(direction - GS->node.configuration.direction) <= 3 || abs(direction - GS->node.configuration.direction) >= 9)
+	{
+		return true;
+	}
+	return false;
 }
 
 void AlarmModule::GapAdvertisementReportEventHandler(const GapAdvertisementReportEvent &advertisementReportEvent)
@@ -574,7 +601,7 @@ void AlarmModule::GapAdvertisementReportEventHandler(const GapAdvertisementRepor
 		// Check for same directions of beacon and vehicle
 		// TODO: change value for deviceType
 		// TODO: consider direction ranges (N, NE, E, SE, S, SW, W, NW)
-		if (packetData->deviceType == 0 && packetData->direction == GS->node.configuration.direction)
+		if (packetData->deviceType == 1 && isMyDirection(packetData->direction))
 		{
 			if (trafficJamInterval == 0)
 			{
