@@ -71,6 +71,8 @@ AlarmModule::AlarmModule() : Module(ModuleId::ALARM_MODULE, "alarm")
 	trafficJamPool2.setAllBytesTo(0);
 	trafficJamPool3.setAllBytesTo(0);
 
+	mockedBlackIceIsSet = false;
+
 	GpioInit();
 
 	//Start Broadcasting the informations
@@ -91,7 +93,13 @@ void AlarmModule::ButtonHandler(u8 buttonId, u32 holdTimeDs)
 	UpdateGpioState();
 
 	// Broadcast a rescue lane alarm
-	BroadcastAlarmUpdatePacket(GS->node.configuration.nodeId, SERVICE_INCIDENT_TYPE::RESCUE_LANE, SERVICE_ACTION_TYPE::SAVE);
+	if(mockedBlackIceIsSet) {
+		BroadcastAlarmUpdatePacket(GS->node.configuration.nodeId, SERVICE_INCIDENT_TYPE::BLACK_ICE, SERVICE_ACTION_TYPE::SAVE);
+		mockedBlackIceIsSet = true;
+	} else {
+		BroadcastAlarmUpdatePacket(GS->node.configuration.nodeId, SERVICE_INCIDENT_TYPE::BLACK_ICE, SERVICE_ACTION_TYPE::DELETE);
+		mockedBlackIceIsSet = false;
+	}
 }
 
 void AlarmModule::BlinkGreenLed()

@@ -193,6 +193,8 @@ private:
 	u8 nearestBlackIceOppositeLaneNodeId;
 	u8 nearestRescueLaneOppositeLaneNodeId;
 
+	bool mockedBlackIceIsSet;
+
 	AlarmModuleConfiguration configuration;
 	AdvJob* alarmJobHandle;
 	u8 currentAdvChannel;
