@@ -87,6 +87,23 @@ class MapFragment : Fragment(), OnMapReadyCallback {
         mapFragment?.getMapAsync(this)
         adapter?.update(dataManager.qrScannedNodes)
         setNodes()
+        if(gMap != null){
+            addObservers()
+        }
+    }
+
+    private fun addObservers() {
+        nodesLiveData.observe(this, Observer { data ->
+            if (data.size > 0) {
+                val positionNode = dataManager.qrScannedNodes.stream()
+                    .filter { node ->
+                        node.nodeID == data[0].messageMeshAccessBroadcast?.deviceNumber?.toLong()
+                    }.findFirst()
+                if (positionNode.isPresent) {
+                    setPosition(positionNode.get())
+                }
+            }
+        })
     }
 
 
@@ -138,7 +155,7 @@ class MapFragment : Fragment(), OnMapReadyCallback {
         positionMarker?.remove()
         positionMarker = gMap!!.addMarker(markerOptions)
         setAnimation(positionMarker)
-        gMap!!.animateCamera(CameraUpdateFactory.newLatLngZoom(positionMarker!!.position, 20f))
+        gMap!!.animateCamera(CameraUpdateFactory.newLatLngZoom(positionMarker!!.position, 22f))
         positionMarker?.showInfoWindow()
         positionMarker?.title = "YOU ARE HERE"
     }
@@ -192,21 +209,8 @@ class MapFragment : Fragment(), OnMapReadyCallback {
             // zoom to our floor
             val hdm = LatLng(48.7419229, 9.1005615)
 
-            gMap!!.animateCamera(CameraUpdateFactory.newLatLngZoom(hdm, 14f))
+            gMap!!.animateCamera(CameraUpdateFactory.newLatLngZoom(hdm, 20f))
             setNodes()
-
-            nodesLiveData.observe(this, Observer { data ->
-                if (data.size > 0) {
-                    val positionNode = dataManager.qrScannedNodes.stream()
-                        .filter { node ->
-                            node.nodeID == data[0].messageMeshAccessBroadcast?.deviceNumber?.toLong()
-                        }.findFirst()
-                    if (positionNode.isPresent) {
-                        setPosition(positionNode.get())
-                    }
-                }
-            })
-
         }
     }
 

@@ -2,8 +2,10 @@ package de.hdm.smart_penguins.data.manager
 
 import de.hdm.smart_penguins.SmartApplication
 import de.hdm.smart_penguins.data.Constants
+import de.hdm.smart_penguins.data.Constants.VAR_NOT_SET
 import de.hdm.smart_penguins.data.model.DeviceBroadcast
 import de.hdm.smart_penguins.data.model.PersistentNode
+import de.hdm.smart_penguins.utils.Util.ternary
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -13,7 +15,7 @@ class DataManager @Inject constructor(
 ) {
     //mutual live data .value text rein
     //var isEmergency =
-    var qrScannedNodes =  ArrayList<PersistentNode>()
+    var qrScannedNodes = ArrayList<PersistentNode>()
     private val TAG = "DATA_MANAGER"
     var isSlippery = false
     var isJam = false
@@ -24,7 +26,7 @@ class DataManager @Inject constructor(
     var device = Constants.DEVICE_TYPE_CAR
     var isRightTurn = false
     var isLeftTurn = false
-    var deviceId = 12324
+    var deviceId = System.currentTimeMillis()
 
 
     fun getDeviceBroadcast(): ByteArray {
@@ -37,8 +39,16 @@ class DataManager @Inject constructor(
             isSlippery,
             isEmergency,
             isJam,
-            deviceId
+            deviceId.toInt()
         )
+    }
+
+    fun getDirectionForNode(deviceNumber: Short): Int {
+        val node = qrScannedNodes.stream()
+            .filter { id -> id.nodeID == deviceNumber.toLong() }
+            .findFirst()
+        return ternary(node.isPresent, node.get().direction.toInt(), VAR_NOT_SET)
+
     }
 }
 
