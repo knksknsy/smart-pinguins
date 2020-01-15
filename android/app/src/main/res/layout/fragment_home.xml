@@ -58,5 +58,14 @@
         <include layout="@layout/fragment_blackice"/>
     </LinearLayout>
 
+    <LinearLayout
+        android:id="@+id/bike"
+        android:visibility="gone"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <include layout="@layout/fragment_bicycle"/>
+    </LinearLayout>
+
 
 </LinearLayout>

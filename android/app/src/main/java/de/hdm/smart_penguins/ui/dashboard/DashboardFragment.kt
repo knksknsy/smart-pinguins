@@ -21,9 +21,7 @@ class DashboardFragment : BaseFragment() {
         super.onCreateView(inflater, container, savedInstanceState)
         return inflater.inflate(R.layout.fragment_dashboard, container, false)
 
-
     }
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         if (dataManager.device == Constants.DEVICE_TYPE_EMERGENCY) {
@@ -65,7 +63,6 @@ class DashboardFragment : BaseFragment() {
             onResetIndicator()
             onRight()
         })
-
     }
 
     override fun onResume() {
