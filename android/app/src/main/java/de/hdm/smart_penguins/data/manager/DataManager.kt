@@ -44,9 +44,9 @@ class DataManager @Inject constructor(
     }
 
     fun getDirectionForNode(deviceNumber: Short): Int {
-        val node = qrScannedNodes.stream()
-            .filter { id -> id.nodeID == deviceNumber.toLong() }
-            .findFirst()
+            val node = qrScannedNodes.stream()
+                .filter { id -> id.nodeID == deviceNumber.toLong() }
+                .findFirst()
         return ternary(node.isPresent, node.get().direction.toInt(), VAR_NOT_SET)
 
     }

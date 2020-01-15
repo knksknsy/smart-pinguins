@@ -32,7 +32,6 @@ class HomeFragment : BaseFragment() {
         super.onResume()
 
         nodesLiveData.observe(this, Observer { data ->
-
         })
 
         var alarmNode = 0

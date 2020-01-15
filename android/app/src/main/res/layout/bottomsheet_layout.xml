@@ -32,7 +32,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:padding="10dp"
-            android:text="Choose a beacon from the list and place it by clicking on the map" />
+            android:text="Choose a Beacon from list to delete
+" />
 
         <View
             android:layout_width="match_parent"
