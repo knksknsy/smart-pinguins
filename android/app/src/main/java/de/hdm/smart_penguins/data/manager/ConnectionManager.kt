@@ -97,7 +97,7 @@ class ConnectionManager @Inject constructor(
                                     0,
                                     0,
                                     0,
-                                    0,
+                                     deviceBroadcast.deviceId,
                                     true
                                 )
                             }

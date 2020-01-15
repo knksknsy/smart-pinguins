@@ -60,6 +60,10 @@ class HomeFragment : BaseFragment() {
                     if (0 != alarm.nearestBlackIceNode) {
                         cases.add("blackice")
                     }
+
+                    if(alarm.isBikeNear == true) {
+                        cases.add("bike")
+                    }
                     cases.add("")
 
                     if(locker == false) {
@@ -132,6 +136,7 @@ class HomeFragment : BaseFragment() {
             emergency.visibility = View.GONE
             balckice.visibility = View.GONE
             jam.visibility = View.GONE
+            bike.visibility = View.GONE
 
             when (title) {
                 "emergency" -> {
@@ -143,10 +148,14 @@ class HomeFragment : BaseFragment() {
                 "jam" -> {
                     jam.visibility = View.VISIBLE
                 }
+                "bike" -> {
+                    bike.visibility = View.VISIBLE
+                }
                 "reset" -> {
                     emergency.visibility = View.GONE
                     balckice.visibility = View.GONE
                     jam.visibility = View.GONE
+                    bike.visibility = View.GONE
                     platzhalter.visibility = View.VISIBLE
                 }
                 else -> {
