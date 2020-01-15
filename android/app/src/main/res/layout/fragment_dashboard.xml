@@ -39,15 +39,14 @@
         android:id="@+id/cycle_btn"
         android:layout_width="350dp"
         android:layout_height="80dp"
+        android:layout_marginTop="20dp"
         android:background="@color/defaultBtn"
         android:text="Fahrrad"
-        android:layout_marginTop="20dp"
 
         app:layout_constraintBottom_toTopOf="@+id/emergency_btn"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/right_btn"
-        />
+        app:layout_constraintTop_toBottomOf="@id/right_btn" />
 
     <Button
         android:id="@+id/emergency_btn"
@@ -78,6 +77,46 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/emergency_btn"
         app:layout_constraintVertical_bias="0.0" />
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/walk_btn"
+        app:layout_constraintVertical_bias="0.502">
+
+        <TextView
+            android:id="@+id/nodeId"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="10dp"
+            android:textColor="@color/White" />
+
+        <TextView
+            android:id="@+id/clusterSize"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="10dp"
+            android:textColor="@color/White" />
+
+        <TextView
+            android:id="@+id/type"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="10dp"
+            android:textColor="@color/White" />
+
+        <TextView
+            android:id="@+id/direction"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="10dp"
+            android:textColor="@color/White" />
+
+    </LinearLayout>
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

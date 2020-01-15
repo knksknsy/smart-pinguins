@@ -4,9 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
-import android.widget.ImageButton
-import androidx.lifecycle.ViewModelProviders
+import androidx.lifecycle.Observer
 import de.hdm.smart_penguins.R
 import de.hdm.smart_penguins.data.Constants
 import de.hdm.smart_penguins.ui.BaseFragment
@@ -15,34 +13,17 @@ import kotlinx.android.synthetic.main.fragment_dashboard.*
 
 class DashboardFragment : BaseFragment() {
 
-
-
-    private lateinit var dashboardViewModel: DashboardViewModel
-
-    private var emergencyState = false
-    private var cycleState = false
-    private var walkState = false
-    private var leftState = false
-    private var rightState = false
-
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
         super.onCreateView(inflater, container, savedInstanceState)
-        dashboardViewModel = ViewModelProviders.of(this).get(DashboardViewModel::class.java)
         val root = inflater.inflate(R.layout.fragment_dashboard, container, false)
 
-        val emergency_btn: Button = root.findViewById(R.id.emergency_btn)
-        val cycle_btn: Button = root.findViewById(R.id.cycle_btn)
-        val walk_btn: Button = root.findViewById(R.id.walk_btn)
-        val left_btn: ImageButton = root.findViewById(R.id.left_btn)
-        val right_btn: ImageButton = root.findViewById(R.id.right_btn)
-
-        if(dataManager.device == Constants.DEVICE_TYPE_EMERGENCY){
+        if (dataManager.device == Constants.DEVICE_TYPE_EMERGENCY) {
             emergency_btn.setBackgroundColor(resources.getColor(R.color.LightGrey))
-        } else if(dataManager.device == Constants.DEVICE_TYPE_BIKE) {
+        } else if (dataManager.device == Constants.DEVICE_TYPE_BIKE) {
             cycle_btn.setBackgroundColor(resources.getColor(R.color.LightGrey))
         } else if (dataManager.device == Constants.DEVICE_TYPE_WALK) {
             walk_btn.setBackgroundColor(resources.getColor(R.color.LightGrey))
@@ -50,7 +31,7 @@ class DashboardFragment : BaseFragment() {
 
         if (dataManager.isLeftTurn) {
             left_btn.setBackgroundColor(resources.getColor(R.color.Green))
-        } else if (dataManager.isRightTurn){
+        } else if (dataManager.isRightTurn) {
             right_btn.setBackgroundColor(resources.getColor((R.color.Green)))
         }
 
@@ -75,12 +56,30 @@ class DashboardFragment : BaseFragment() {
             onLeft()
         })
 
-        right_btn.setOnClickListener(View.OnClickListener {
+        right_btn.setOnClickListener({
             onResetIndicator()
             onRight()
         })
 
         return root
+    }
+
+    override fun onResume() {
+        super.onResume()
+        nodesLiveData.observe(this, Observer { data ->
+            if (data.size > 0 && data[0].messageMeshAccessBroadcast != null) {
+                nodeId.text = data[0].messageMeshAccessBroadcast!!.deviceNumber.toString()
+                type.text = data[0].messageMeshAccessBroadcast!!.type.toString()
+                clusterSize.text = data[0].messageMeshAccessBroadcast!!.clusterSize.toString()
+                direction.text = data[0].messageMeshAccessBroadcast!!.direction.toString()
+            }
+        })
+    }
+
+    override fun onPause() {
+        super.onPause()
+        nodesLiveData.removeObservers(this)
+
     }
 
     private fun onResetDevice() {

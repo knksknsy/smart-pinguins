@@ -18,8 +18,9 @@ import de.hdm.smart_penguins.data.Constants.MANUFACTURER_DATA
 import de.hdm.smart_penguins.data.Constants.MESSAGE_TYPE_DEVICE_BROADCAST
 import de.hdm.smart_penguins.data.Constants.NETWORK_ID_NOT_SET
 import de.hdm.smart_penguins.data.Constants.SERVICE_UUID
+import de.hdm.smart_penguins.data.Constants.VAR_NOT_SET
 import de.hdm.smart_penguins.data.model.*
-import de.hdm.smart_penguins.utils.Util.checkIfNodesAreOpposite
+import de.hdm.smart_penguins.utils.Util.ternary
 import no.nordicsemi.android.support.v18.scanner.*
 import no.nordicsemi.android.support.v18.scanner.ScanCallback
 import no.nordicsemi.android.support.v18.scanner.ScanFilter
@@ -92,7 +93,7 @@ class ConnectionManager @Inject constructor(
                         )
                         Log.e(TAG, "Received device broadcast")
                         if (deviceBroadcast.messageType == MESSAGE_TYPE_DEVICE_BROADCAST) {
-                            if(deviceBroadcast.type == Constants.DEVICE_TYPE_BIKE && dataManager.isRightTurn){
+                            if (deviceBroadcast.type == Constants.DEVICE_TYPE_BIKE && dataManager.isRightTurn) {
                                 alarm.value = Alarm(
                                     0,
                                     0,
@@ -124,32 +125,48 @@ class ConnectionManager @Inject constructor(
     }
 
     private fun checkNodeForAlarm(broadcast: MessageMeshBroadcast?) {
-        if (broadcast != null
-          //  && directionAndNodeCheck(broadcast, broadcast.nearestBlackIceNodeId.toInt())
-          //  && directionAndNodeCheck(broadcast, broadcast.nearestRescueLaneNodeId.toInt())
-          //  && directionAndNodeCheck(broadcast, broadcast.nearestTrafficJamNodeId.toInt())
-        ) {
-            alarm.value = Alarm(
-                broadcast.nearestBlackIceNodeId.toInt(),
-                broadcast.nearestRescueLaneNodeId.toInt(),
-                broadcast.nearestTrafficJamNodeId.toInt(),
-                broadcast.deviceNumber.toInt(),
-                false
+        if (broadcast != null) {
+
+            val direction = dataManager.getDirectionForNode(broadcast.deviceNumber)
+            val isMyDirection = sensorManager.isMyDirection(
+                ternary(direction != VAR_NOT_SET, direction, broadcast.direction.toInt())
             )
-        } else {
-            alarm.value = null
+            if ((directionAndNodeCheck(broadcast, isMyDirection))) {
+                alarm.value = Alarm(
+                    (ternary(
+                        isMyDirection,
+                        broadcast.nearestBlackIceNodeId,
+                        broadcast.nearestBlackIceOppositeLaneNodeId
+                    ).toInt()),
+                    (ternary(
+                        isMyDirection,
+                        broadcast.nearestRescueLaneNodeId,
+                        broadcast.nearestRescueLaneOppositeLaneNodeId
+                    ).toInt()),
+                    (ternary(
+                        isMyDirection,
+                        broadcast.nearestTrafficJamNodeId,
+                        broadcast.nearestTrafficJamOppositeLaneNodeId
+                    ).toInt()),
+                    broadcast.deviceNumber.toInt(),
+                    false
+                )
+            }
         }
     }
 
     private fun directionAndNodeCheck(
         broadcast: MessageMeshBroadcast,
-        nodeEmergency: Int
+        isMyDirection: Boolean
     ): Boolean {
-        return nodeEmergency != 0
-                && (sensorManager.isMyDirection(broadcast.direction.toInt())
-                && !checkIfNodesAreOpposite(broadcast.deviceNumber.toInt(), nodeEmergency))
-                || (!sensorManager.isMyDirection(broadcast.direction.toInt())
-                && checkIfNodesAreOpposite(broadcast.deviceNumber.toInt(), nodeEmergency))
+        return ((broadcast.nearestRescueLaneNodeId.toInt() != 0
+                || broadcast.nearestTrafficJamNodeId.toInt() != 0
+                || broadcast.nearestBlackIceNodeId.toInt() != 0)
+                && isMyDirection)
+                || ((broadcast.nearestBlackIceOppositeLaneNodeId.toInt() != 0
+                || broadcast.nearestRescueLaneOppositeLaneNodeId.toInt() != 0
+                || broadcast.nearestTrafficJamOppositeLaneNodeId.toInt() != 0)
+                && !isMyDirection)
     }
 
 
