@@ -19,8 +19,13 @@ class DashboardFragment : BaseFragment() {
         savedInstanceState: Bundle?
     ): View? {
         super.onCreateView(inflater, container, savedInstanceState)
-        val root = inflater.inflate(R.layout.fragment_dashboard, container, false)
+        return inflater.inflate(R.layout.fragment_dashboard, container, false)
 
+
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
         if (dataManager.device == Constants.DEVICE_TYPE_EMERGENCY) {
             emergency_btn.setBackgroundColor(resources.getColor(R.color.LightGrey))
         } else if (dataManager.device == Constants.DEVICE_TYPE_BIKE) {
@@ -61,7 +66,6 @@ class DashboardFragment : BaseFragment() {
             onRight()
         })
 
-        return root
     }
 
     override fun onResume() {
