@@ -268,7 +268,7 @@ class ConnectionManager @Inject constructor(
         val parameters = AdvertisingSetParameters.Builder()
             .setLegacyMode(true) // True by default, but set here as a reminder.
             .setConnectable(false)
-            .setInterval(AdvertisingSetParameters.INTERVAL_HIGH)
+            .setInterval(AdvertisingSetParameters.INTERVAL_LOW)
             .setTxPowerLevel(AdvertisingSetParameters.TX_POWER_HIGH)
             .build()
 

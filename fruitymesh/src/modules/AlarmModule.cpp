@@ -66,7 +66,6 @@ AlarmModule::AlarmModule() : Module(ModuleId::ALARM_MODULE, "alarm")
 	nearestRescueLaneOppositeLaneNodeId = 0;
 
 	trafficJamInterval = 0;
-	trafficJamPoolStates.setAllBytesTo(0);
 	trafficJamPool1.setAllBytesTo(0);
 	trafficJamPool2.setAllBytesTo(0);
 	trafficJamPool3.setAllBytesTo(0);
@@ -236,6 +235,12 @@ void AlarmModule::BroadcastPenguinAdvertisingPacket()
 		alarmData->nearestRescueLaneNodeId = nearestRescueLaneNodeId;
 		alarmData->nearestTrafficJamNodeId = nearestTrafficJamNodeId;
 		alarmData->nearestBlackIceNodeId = nearestBlackIceNodeId;
+		logt("ALARMMOD", " ");
+		logt("ALARMMOD", "GLOBAL ALARM STATES:");
+		logt("ALARMMOD", "nearestRescueLaneNodeId = %u", nearestRescueLaneNodeId);
+		logt("ALARMMOD", "nearestTrafficJamNodeId = %u", nearestTrafficJamNodeId);
+		logt("ALARMMOD", "nearestBlackIceNodeId = %u", nearestBlackIceNodeId);
+		logt("ALARMMOD", " ");
 		alarmData->nearestRescueLaneOppositeLaneNodeId = nearestRescueLaneOppositeLaneNodeId;
 		alarmData->nearestTrafficJamOppositeLaneNodeId = nearestTrafficJamOppositeLaneNodeId;
 		alarmData->nearestBlackIceOppositeLaneNodeId = nearestBlackIceOppositeLaneNodeId;
@@ -266,7 +271,7 @@ void AlarmModule::BroadcastPenguinAdvertisingPacket()
 	}
 	char cbuffer[100];
 
-	logt("ALARMMOD", "Broadcasting asset data %s, len %u", cbuffer, length);
+	// logt("ALARMMOD", "Broadcasting asset data %s, len %u", cbuffer, length);
 }
 
 void AlarmModule::ResetToDefaultConfiguration()
@@ -429,40 +434,7 @@ bool AlarmModule::UpdateSavedIncident(u8 incidentNodeId, u8 incidentType, u8 act
 	return changed;
 }
 
-void AlarmModule::TimerEventHandler(u16 passedTimeDs, u32 appTimerDs)
-{
-	if (!configuration.moduleActive)
-		return;
-
-	if (SHOULD_IV_TRIGGER(appTimerDs, passedTimeDs, ALARM_MODULE_BROADCAST_TRIGGER_TIME_DS))
-	{
-		BroadcastPenguinAdvertisingPacket();
-	}
-
-	// Traffic jam timer
-	if (SHOULD_IV_TRIGGER(appTimerDs, passedTimeDs, ALARM_MODULE_TRAFFIC_JAM_DETECTION_TIME_DS))
-	{
-		if (nearestTrafficJamNodeId != GS->node.configuration.nodeId && intersection(trafficJamPool1, trafficJamPool2, trafficJamPool3) > 0)
-			BroadcastAlarmUpdatePacket(GS->node.configuration.nodeId, SERVICE_INCIDENT_TYPE::TRAFFIC_JAM, SERVICE_ACTION_TYPE::SAVE);
-		else if (nearestTrafficJamNodeId == GS->node.configuration.nodeId)
-			BroadcastAlarmUpdatePacket(GS->node.configuration.nodeId, SERVICE_INCIDENT_TYPE::TRAFFIC_JAM, SERVICE_ACTION_TYPE::DELETE);
-
-		if (trafficJamInterval == 0)
-			trafficJamPool1.setAllBytesTo(0);
-
-		if (trafficJamInterval == 1)
-			trafficJamPool2.setAllBytesTo(0);
-		
-		if (trafficJamInterval == 2)
-			trafficJamPool3.setAllBytesTo(0);
-
-		trafficJamInterval++;
-		if (trafficJamInterval > 2)
-			trafficJamInterval = 0;
-	}
-}
-
-int AlarmModule::intersection(SimpleArray<u16, TRAFFIC_JAM_POOL_SIZE> a, SimpleArray<u16, TRAFFIC_JAM_POOL_SIZE> b, SimpleArray<u16, TRAFFIC_JAM_POOL_SIZE> c)
+u8 AlarmModule::intersection(SimpleArray<u16, TRAFFIC_JAM_POOL_SIZE> a, SimpleArray<u16, TRAFFIC_JAM_POOL_SIZE> b, SimpleArray<u16, TRAFFIC_JAM_POOL_SIZE> c)
 {
 	u8 m = a.size();
 	u8 n = b.size();
@@ -471,10 +443,44 @@ int AlarmModule::intersection(SimpleArray<u16, TRAFFIC_JAM_POOL_SIZE> a, SimpleA
 	SimpleArray<u16, TRAFFIC_JAM_POOL_SIZE> abc;
 	ab.setAllBytesTo(0);
 	abc.setAllBytesTo(0);
+
 	SimpleArray<u16, TRAFFIC_JAM_POOL_SIZE> a1;
 	SimpleArray<u16, TRAFFIC_JAM_POOL_SIZE> b1;
 	a1.setAllBytesTo(0);
 	b1.setAllBytesTo(0);
+
+	if (a.size() > 0 && b.size() > 0 && c.size() > 0)
+	{
+		m = a.size();
+		n = b.size();
+
+		for (int i = 0; i < m; i++)
+		{
+			for (int j = 0; j < n; j++)
+			{
+				if (a[i] == b[j])
+				{
+					ab[count] = a[i];
+					count++;
+				}
+			}
+		}
+		m = ab.size();
+		n = c.size();
+		count = 0;
+		for (int i = 0; i < m; i++)
+		{
+			for (int j = 0; j < n; j++)
+			{
+				if (ab[i] == c[j])
+				{
+					abc[count] = ab[i];
+					count++;
+				}
+			}
+		}
+		return (u8)abc.size();
+	}
 
 	if (a.size() == 0 && b.size() > 0 && c.size() > 0)
 	{
@@ -491,10 +497,8 @@ int AlarmModule::intersection(SimpleArray<u16, TRAFFIC_JAM_POOL_SIZE> a, SimpleA
 		a1 = a;
 		b1 = b;
 	}
-
 	m = a1.size();
 	n = b1.size();
-
 	for (int i = 0; i < m; i++)
 	{
 		for (int j = 0; j < n; j++)
@@ -506,30 +510,7 @@ int AlarmModule::intersection(SimpleArray<u16, TRAFFIC_JAM_POOL_SIZE> a, SimpleA
 			}
 		}
 	}
-
-	if (a.size() > 0 && b.size() > 0 && c.size() > 0)
-	{
-
-		m = ab.size();
-		n = c.size();
-		count = 0;
-		for (int i = 0; i < m; i++)
-		{
-			for (int j = 0; j < n; j++)
-			{
-				if (ab[i] == c[j])
-				{
-					abc[count] = ab[i];
-					count++;
-				}
-			}
-		}
-		return abc.size();
-	}
-	else
-	{
-		return ab.size();
-	}
+	return (u8)ab.size();
 }
 
 void AlarmModule::GpioInit()
@@ -580,13 +561,13 @@ void AlarmModule::GapAdvertisementReportEventHandler(const GapAdvertisementRepor
 		}
 		// Logging values of packetHeader
 		logt("ALARMMOD", "advPacketCarServiceAndDataHeader:\n");
-		logt("ALARMMOD", "flags: 0x%02X,\nmway_service_uuid: 0x%02X,\nflags2: 0x%02X\nmway_service_uuid2: 0x%02X\n",
+		logt("ALARMMOD", "flags: 0x%X,\nmway_service_uuid: 0x%X,\nflags2: 0x%X\nmway_service_uuid2: 0x%X\n",
 			 packetHeader->flags,
 			 packetHeader->mway_service_uuid,
 			 packetHeader->flags2,
 			 packetHeader->mway_service_uuid2);
 		// Logging values of packetData
-		logt("ALARMMOD", "advPacketAssetServiceData:\nlen: 0x%02X,\ntype: 0x%02X,\nmessageType: 0x%02X,\ndeviceID: 0x%02X,\ndeviceType: 0x%02X,\ndirection: 0x%02X,\nisEmergency: 0x%02X,\nisSlippery: 0x%02X,\nisJam: 0x%02X",
+		logt("ALARMMOD", "advPacketAssetServiceData:\nlen: 0x%X,\ntype: 0x%X,\nmessageType: 0x%X,\ndeviceID: 0x%X,\ndeviceType: 0x%X,\ndirection: 0x%X,\nisEmergency: 0x%X,\nisSlippery: 0x%X,\nisJam: 0x%X",
 			 packetData->len,
 			 packetData->type,
 			 packetData->messageType,
@@ -597,35 +578,112 @@ void AlarmModule::GapAdvertisementReportEventHandler(const GapAdvertisementRepor
 			 packetData->isSlippery,
 			 packetData->isJam);
 
-		// Check for same directions of beacon and vehicle
-		// TODO: change value for deviceType
-		// TODO: consider direction ranges (N, NE, E, SE, S, SW, W, NW)
-		if (packetData->deviceType == 1 && isMyDirection(packetData->direction))
+		if (packetData->deviceType == DeviceType::VEHICLE && isMyDirection(packetData->direction))
 		{
+			logt("ALARMMOD", "(Handler) trafficJamInterval = %u", trafficJamInterval);
+			logt("ALARMMOD", "direction = %u", packetData->direction);
+			logt("ALARMMOD", " ");
 			if (trafficJamInterval == 0)
 			{
 				if (trafficJamPool1.size() >= TRAFFIC_JAM_POOL_SIZE)
 					trafficJamPool1.pop_front();
 
-				if (trafficJamPool1.has(packetData->deviceID))
+				if (!trafficJamPool1.has(packetData->deviceID))
+				{
 					trafficJamPool1[trafficJamPool1.size()] = packetData->deviceID;
+					logt("ALARMMOD", "trafficJamPool1[%u] = %u", trafficJamPool1.size(), packetData->deviceID);
+					logt("ALARMMOD", " ");
+				}
 			}
 			if (trafficJamInterval == 1)
 			{
 				if (trafficJamPool2.size() >= TRAFFIC_JAM_POOL_SIZE)
 					trafficJamPool2.pop_front();
 
-				if (trafficJamPool2.has(packetData->deviceID))
+				if (!trafficJamPool2.has(packetData->deviceID))
+				{
 					trafficJamPool2[trafficJamPool2.size()] = packetData->deviceID;
+					logt("ALARMMOD", "trafficJamPool2[%u] = %u", trafficJamPool2.size(), packetData->deviceID);
+					logt("ALARMMOD", " ");
+				}
 			}
 			if (trafficJamInterval == 2)
 			{
 				if (trafficJamPool3.size() >= TRAFFIC_JAM_POOL_SIZE)
-					trafficJamPool2.pop_front();
+					trafficJamPool3.pop_front();
 
-				if (trafficJamPool3.has(packetData->deviceID))
+				if (!trafficJamPool3.has(packetData->deviceID))
+				{
 					trafficJamPool3[trafficJamPool3.size()] = packetData->deviceID;
+					logt("ALARMMOD", "trafficJamPool3[%u] = %u", trafficJamPool3.size(), packetData->deviceID);
+					logt("ALARMMOD", " ");
+				}
 			}
 		}
+	}
+}
+
+void AlarmModule::TimerEventHandler(u16 passedTimeDs)
+{
+	if (!configuration.moduleActive)
+		return;
+
+	if (SHOULD_IV_TRIGGER(GS->appTimerDs + GS->appTimerRandomOffsetDs, passedTimeDs, ALARM_MODULE_BROADCAST_TRIGGER_TIME_DS))
+	{
+		BroadcastPenguinAdvertisingPacket();
+	}
+
+	// Traffic jam timer
+	if (SHOULD_IV_TRIGGER(GS->appTimerDs + GS->appTimerRandomOffsetDs, passedTimeDs, ALARM_MODULE_TRAFFIC_JAM_DETECTION_TIME_DS))
+	{
+		logt("ALARMMOD", "(Timer) trafficJamInterval = %u", trafficJamInterval);
+		for (int i = 0; i < TRAFFIC_JAM_POOL_SIZE; i++)
+		{
+			logt("ALARMMOD", "trafficJamPool1[%d] = %u", i, trafficJamPool1[i]);
+		}
+		logt("ALARMMOD", " ");
+		for (int i = 0; i < TRAFFIC_JAM_POOL_SIZE; i++)
+		{
+			logt("ALARMMOD", "trafficJamPool2[%d] = %u", i, trafficJamPool2[i]);
+		}
+		logt("ALARMMOD", " ");
+		for (int i = 0; i < TRAFFIC_JAM_POOL_SIZE; i++)
+		{
+			logt("ALARMMOD", "trafficJamPool3[%d] = %u", i, trafficJamPool3[i]);
+		}
+		logt("ALARMMOD", " ");
+
+		u8 intersections = intersection(trafficJamPool1, trafficJamPool2, trafficJamPool3);
+		logt("ALARMMOD", "intersection = %u", intersections);
+		logt("ALARMMOD", "nearestRescueLaneNodeId = %u", nearestRescueLaneNodeId);
+		logt("ALARMMOD", "nearestTrafficJamNodeId = %u", nearestTrafficJamNodeId);
+		logt("ALARMMOD", "nearestBlackIceNodeId = %u", nearestBlackIceNodeId);
+		logt("ALARMMOD", " ");
+
+		if (nearestTrafficJamNodeId != GS->node.configuration.nodeId && intersections > 0)
+		{
+			BroadcastAlarmUpdatePacket(GS->node.configuration.nodeId, SERVICE_INCIDENT_TYPE::TRAFFIC_JAM, SERVICE_ACTION_TYPE::SAVE);
+			logt("ALARMMOD", "BroadcastAlarmUpdatePacket(%u, SERVICE_INCIDENT_TYPE::TRAFFIC_JAM, SERVICE_ACTION_TYPE::SAVE);", GS->node.configuration.nodeId);
+			logt("ALARMMOD", " ");
+		}
+		else if (nearestTrafficJamNodeId == GS->node.configuration.nodeId && intersections == 0)
+		{
+			BroadcastAlarmUpdatePacket(GS->node.configuration.nodeId, SERVICE_INCIDENT_TYPE::TRAFFIC_JAM, SERVICE_ACTION_TYPE::DELETE);
+			logt("ALARMMOD", "BroadcastAlarmUpdatePacket(%u, SERVICE_INCIDENT_TYPE::TRAFFIC_JAM, SERVICE_ACTION_TYPE::DELETE);", GS->node.configuration.nodeId);
+			logt("ALARMMOD", " ");
+		}
+
+		if (trafficJamInterval == 0)
+			trafficJamPool2.setAllBytesTo(0);
+			
+		if (trafficJamInterval == 1)
+			trafficJamPool3.setAllBytesTo(0);
+		
+		if (trafficJamInterval == 2)
+			trafficJamPool1.setAllBytesTo(0);
+
+		trafficJamInterval++;
+		if (trafficJamInterval > 2)
+			trafficJamInterval = 0;
 	}
 }

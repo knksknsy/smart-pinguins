@@ -183,6 +183,12 @@ private:
 		DELETE = 0,
 		SAVE = 1,
 	};
+	enum DeviceType {
+		VEHICLE = 1,
+		BICYCLE = 2,
+		EMERGENCY = 3,
+		PEDESTRIAN = 4
+	};
 
 	u8 nearestTrafficJamNodeId;
 	u8 nearestBlackIceNodeId;
@@ -202,7 +208,6 @@ private:
 	u8 gpioState;
 
 	u8 trafficJamInterval;
-	SimpleArray<u8, 3> trafficJamPoolStates;
 	SimpleArray<u16, TRAFFIC_JAM_POOL_SIZE> trafficJamPool1;
 	SimpleArray<u16, TRAFFIC_JAM_POOL_SIZE> trafficJamPool2;
 	SimpleArray<u16, TRAFFIC_JAM_POOL_SIZE> trafficJamPool3;
@@ -228,7 +233,7 @@ public:
 
 	bool UpdateSavedIncident(u8 incidentNodeId, u8 incidentType, u8 actionType);
 
-	void TimerEventHandler(u16 passedTimeDs, u32 appTimerDs);
+	void TimerEventHandler(u16 passedTimeDs) override;
 
 	void ReceivedMeshAccessDisconnectMessage(connPacketModule* packet, u16 packetLength);
 
@@ -240,7 +245,7 @@ public:
 
 	void UpdateGpioState();
 	
-	int intersection(SimpleArray<u16, TRAFFIC_JAM_POOL_SIZE> a, SimpleArray<u16, TRAFFIC_JAM_POOL_SIZE> b, SimpleArray<u16, TRAFFIC_JAM_POOL_SIZE> c);
+	u8 intersection(SimpleArray<u16, TRAFFIC_JAM_POOL_SIZE> a, SimpleArray<u16, TRAFFIC_JAM_POOL_SIZE> b, SimpleArray<u16, TRAFFIC_JAM_POOL_SIZE> c);
 
 	virtual void GapAdvertisementReportEventHandler(const GapAdvertisementReportEvent& advertisementReportEvent) override;
 

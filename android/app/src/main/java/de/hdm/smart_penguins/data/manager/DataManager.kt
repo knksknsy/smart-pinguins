@@ -46,11 +46,11 @@ class DataManager @Inject constructor(
         val node = qrScannedNodes.stream()
             .filter { id -> id.nodeID == deviceNumber.toLong() }
             .findFirst().orElse(null)
-        if(node != null) {
+        if (node != null) {
             return node.direction.toInt()
+        } else {
+            return VAR_NOT_SET
         }
-        else{return VAR_NOT_SET}
-
     }
 }
 
