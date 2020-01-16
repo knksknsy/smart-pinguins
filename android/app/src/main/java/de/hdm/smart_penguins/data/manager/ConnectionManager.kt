@@ -68,7 +68,7 @@ class ConnectionManager @Inject constructor(
                 mScanResultHandler.removeCallbacks(mScanResultRunnable)
                 receiveMeshAccessBroadcastFromBatch(results)
             } else {
-                alarm.value == null
+                alarm.value = null
             }
         }
 
@@ -76,7 +76,7 @@ class ConnectionManager @Inject constructor(
 
     private fun receiveMeshAccessBroadcastFromBatch(results: List<ScanResult>) {
         nodeList.clearNodes()
-
+        var  bikeAlarmId = VAR_NOT_SET
         for (scanResult in results) {
             if (scanResult.scanRecord != null &&
                 scanResult.scanRecord!!.bytes != null &&
@@ -86,33 +86,23 @@ class ConnectionManager @Inject constructor(
                         && scanResult.scanRecord!!.serviceUuids!!.size > 0
                         && scanResult.scanRecord!!.serviceUuids!![0] == ParcelUuid.fromString(
                     SERVICE_UUID
-                )
-                        )
+                ))
                 if (isMwayMessage) {
                     try {
                         val deviceBroadcast: DeviceBroadcast =
                             DeviceBroadcast().initWithBytes(scanResult.scanRecord!!.bytes!!)
+                        val node = BleNode(scanResult)
                         if (deviceBroadcast.messageType == MESSAGE_TYPE_DEVICE_BROADCAST) {
                             Log.e(TAG, "Received device broadcast")
                             if (deviceBroadcast.deviceType == Constants.DEVICE_TYPE_BIKE && dataManager.isRightTurn) {
-                                alarm.value = Alarm(
-                                    0,
-                                    0,
-                                    0,
-                                    deviceBroadcast.deviceId,
-                                    true
-                                )
-                            }else{
-                                alarm.value == null
+                                bikeAlarmId = deviceBroadcast.deviceId
                             }
-                        } else {
-                            val node = BleNode(scanResult)
-                            Log.e(TAG, "Received node")
-                            if (node.messageMeshAccessBroadcast!!.messageType == Constants.MESSAGE_TYPE_BROADCAST) {
-                                nodeList.addNode(node)
-                            }
+                        } else if (node.messageMeshAccessBroadcast!!.messageType == Constants.MESSAGE_TYPE_BROADCAST) {
+                            Log.e(TAG, "Received node message")
+                            nodeList.addNode(node)
                         }
                     } catch (ex: Exception) {
+                        Log.e(TAG, ex.toString())
                     }
 
                 }
@@ -121,12 +111,21 @@ class ConnectionManager @Inject constructor(
         }
         nodeList.sort()
         nodesLiveData.value = nodeList
-        if (nodeList.size > 0) {
+        if(bikeAlarmId != VAR_NOT_SET){
+            alarm.value = Alarm(
+                0,
+                0,
+                0,
+                bikeAlarmId,
+                true
+            )
+        }
+        else if (nodeList.size > 0) {
             val broadcast = nodeList.get(0).messageMeshAccessBroadcast
             Log.e(TAG, broadcast?.deviceNumber.toString())
             checkNodeForAlarm(broadcast)
-        } else {
-            alarm.value == null
+        }else {
+            alarm.value = null
         }
     }
 

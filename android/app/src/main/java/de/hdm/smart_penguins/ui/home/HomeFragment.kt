@@ -9,6 +9,9 @@ import androidx.lifecycle.Observer
 import de.hdm.smart_penguins.R
 import de.hdm.smart_penguins.ui.BaseFragment
 import kotlinx.android.synthetic.main.fragment_home.*
+import java.io.BufferedReader
+import java.io.IOException
+import java.io.InputStreamReader
 
 
 class HomeFragment : BaseFragment() {
@@ -36,20 +39,43 @@ class HomeFragment : BaseFragment() {
         savedInstanceState: Bundle?
     ): View? {
         super.onCreateView(inflater, container, savedInstanceState)
-        root = inflater.inflate(R.layout.fragment_home, container, false)
-        return root
+        return inflater.inflate(R.layout.fragment_home, container, false)
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        fabDismiss.setOnClickListener({ displayNone() })
+    private fun updateTimer() {
+            try {
+                if(isVisible) {
+                    val process = Runtime.getRuntime().exec("logcat -d *:E")
+                    val bufferedReader = BufferedReader(
+                        InputStreamReader(process.inputStream)
+                    )
+                    var log = StringBuilder()
+                    var line: String? = ""
+                    while (bufferedReader.readLine().also({ line = it }) != null) {
+                        log.append("\n")
+                        log.append(line?.replaceBefore("*penguins", ""))
+                    }
+                    scrollview.fullScroll(View.FOCUS_DOWN)
+
+                    if (log.length > 80000) {
+                        log = log.delete(0, log.length / 2)
+                        Log.e("logDelete", log.length.toString())
+                    }
+
+                    //terminal.setMovementMethod(ScrollingMovementMethod())
+                    terminal.text = log.toString()
+                }
+            }
+            catch (e: IOException) { // Handle Exception
+                Log.e("Terminal Error",e.toString())
+            }
     }
 
     override fun onResume() {
         super.onResume()
         dataManager.displayedAlarms.clear()
         alarm.observe(this, Observer { alarm ->
-            Log.e(TAG, (System.currentTimeMillis() / 1000).toString())
+            Log.e(TAG,"Received Alarm")
             if (alarm != null) {
                 //if (alarm.currentNode !in dataManager.displayedAlarms && cases.size == 0) {
                 if(cases.size == 0){
@@ -79,7 +105,9 @@ class HomeFragment : BaseFragment() {
                     dataManager.displayedAlarms.add(alarm.currentNode)
                 }
                 Log.e("DisplayedNodes", dataManager.displayedAlarms.toString())
+
             }
+            updateTimer()
             tickTack();
         })
     }
