@@ -67,6 +67,7 @@ void setFeaturesetConfiguration_github(ModuleConfiguration* config, void* module
 		c->nodeId = 1;
 		c->direction = 1;
 		c->boardType = 1;
+		c->checkDirection = false;
 		CheckedMemset(c->networkKey, 0x00, 16);
 	}
 }

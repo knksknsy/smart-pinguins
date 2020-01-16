@@ -467,6 +467,10 @@ void AlarmModule::GpioInit()
 
 bool AlarmModule::isMyDirection(u8 direction)
 {
+	if (!GS->node.configuration.checkDirection)
+	{
+		return true;
+	}
 	if (abs(direction - GS->node.configuration.direction) <= 3 || abs(direction - GS->node.configuration.direction) >= 9)
 	{
 		return true;
