@@ -8,13 +8,21 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.lifecycle.Observer
 import de.hdm.smart_penguins.R
+import de.hdm.smart_penguins.data.Constants
 import de.hdm.smart_penguins.ui.BaseFragment
 import kotlinx.android.synthetic.main.fragment_home.*
+import java.io.BufferedReader
+import java.io.IOException
+import java.io.InputStreamReader
+import java.lang.NullPointerException
+import java.util.*
+import kotlin.collections.ArrayList
 
 
 class HomeFragment : BaseFragment() {
 
     private var root: View? = null
+
 
     private val TYPE_EMERGENCY = 1
 
@@ -28,11 +36,51 @@ class HomeFragment : BaseFragment() {
         return root
     }
 
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        val terminalTimerTask = Timer()
+        terminalTimerTask?.scheduleAtFixedRate(object: TimerTask() {
+            override fun run() {
+                updateTimer()
+            }
+        }, 0, 1000)
+
+    }
+
+    private fun updateTimer() {
+        activity?.runOnUiThread{
+            try {
+                val process = Runtime.getRuntime().exec("logcat -d *:E")
+                val bufferedReader = BufferedReader(
+                    InputStreamReader(process.inputStream)
+                )
+                val log = StringBuilder()
+                var line: String? = ""
+                while (bufferedReader.readLine().also({ line = it }) != null) {
+                    log.append(line)
+                }
+                try{
+                    scrollview.fullScroll(View.FOCUS_DOWN)
+                }
+                catch (e: NullPointerException){
+                    Log.e("ScrollView",e.toString())
+                }
+
+
+                //terminal.setMovementMethod(ScrollingMovementMethod())
+                terminal.text =log.toString()
+            }
+            catch (e: IOException) { // Handle Exception
+                Log.e("Terminal Error",e.toString())
+            }
+        }
+    }
+
     override fun onResume() {
         super.onResume()
 
         nodesLiveData.observe(this, Observer { data ->
-
         })
 
         var alarmNode = 0
@@ -51,37 +99,42 @@ class HomeFragment : BaseFragment() {
                     val cases = mutableListOf<String>()
                     var finishFlag = false
 
-                    if (0 != alarm.nearestRescueLaneNodeId) {
-                        cases.add("emergency")
-                    }
-                    if (0 != alarm.nearestTrafficJamNodeId) {
-                        cases.add("jam")
-                    }
-                    if (0 != alarm.nearestBlackIceNode) {
-                        cases.add("blackice")
-                    }
+                    if(dataManager.device == Constants.DEVICE_TYPE_CAR){
 
-                    if(alarm.isBikeNear == true) {
-                        cases.add("bike")
-                    }
-                    cases.add("")
+                        if (0 != alarm.nearestRescueLaneNodeId) {
+                            cases.add("emergency")
+                        }
+                        if (0 != alarm.nearestTrafficJamNodeId) {
+                            cases.add("jam")
+                        }
+                        if (0 != alarm.nearestBlackIceNode) {
+                            cases.add("blackice")
+                        }
 
-                    if(locker == false) {
-                        locker = true
-                        finishFlag = execCase(cases, locker)
-                        val timerReset = object: CountDownTimer(30000, 1000) {
-                            override fun onTick(millisUntilFinished: Long) {
-                                //Log.e("Tick:","Timer running")
-                            }
-                            override fun onFinish() {
-                                oldNodes.clear()
-                                Log.e("Timer:","Timer reset")
-                            }
-                        }.start()
-                        locker = finishFlag
-                    }
-                    else{
-                        Log.e("Function blocker","Old function in pipeline")
+                        if(alarm.isBikeNear == true) {
+                            cases.add("bike")
+                        }
+
+                        cases.add("")
+
+                        if(locker == false) {
+                            locker = true
+                            finishFlag = execCase(cases, locker)
+                            val timerReset = object: CountDownTimer(30000, 1000) {
+                                override fun onTick(millisUntilFinished: Long) {
+                                    //Log.e("Tick:","Timer running")
+                                }
+                                override fun onFinish() {
+                                    oldNodes.clear()
+                                    Log.e("Timer:","Timer reset")
+                                }
+                            }.start()
+                            locker = finishFlag
+                        }
+                        else{
+                            Log.e("Function blocker","Old function in pipeline")
+                        }
+
                     }
 
                 }
@@ -93,6 +146,7 @@ class HomeFragment : BaseFragment() {
                 Log.e("Jam", alarm.nearestTrafficJamNodeId.toString())
                 Log.e("Blackice", alarm.nearestBlackIceNode.toString())
                 Log.e("Device Nr", alarm.currentNode.toString())
+                Log.e("Is Bike Near", alarm.isBikeNear.toString())
 
             }
         })

@@ -16,18 +16,28 @@
             android:layout_height="wrap_content"
             android:text="Smart Penguin" />
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/list"
+        <ScrollView
+            android:id="@+id/scrollview"
             android:layout_width="match_parent"
-            android:layout_height="256dp" />
+            android:layout_height="450dp"
+            android:layout_margin="16dp"
+            android:fadeScrollbars="false"
+            android:scrollbarAlwaysDrawVerticalTrack="true"
+            android:scrollbars="vertical">
 
-        <TextView
-            android:id="@+id/textView"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textSize="20dp"
-            android:gravity="center"
-            android:text="Waiting for Use Cases" />
+            <TextView
+                android:id="@+id/terminal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:scrollbars="vertical"
+                android:textColor="@color/White" />
+        </ScrollView>
+
+
+        />
+
+
+
     </LinearLayout>
 
     <LinearLayout

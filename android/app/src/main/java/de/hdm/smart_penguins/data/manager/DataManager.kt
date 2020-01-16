@@ -5,7 +5,6 @@ import de.hdm.smart_penguins.data.Constants
 import de.hdm.smart_penguins.data.Constants.VAR_NOT_SET
 import de.hdm.smart_penguins.data.model.DeviceBroadcast
 import de.hdm.smart_penguins.data.model.PersistentNode
-import de.hdm.smart_penguins.utils.Util.ternary
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -46,9 +45,12 @@ class DataManager @Inject constructor(
     fun getDirectionForNode(deviceNumber: Short): Int {
         val node = qrScannedNodes.stream()
             .filter { id -> id.nodeID == deviceNumber.toLong() }
-            .findFirst()
-        return ternary(node.isPresent, node.get().direction.toInt(), VAR_NOT_SET)
-
+            .findFirst().orElse(null)
+        if (node != null) {
+            return node.direction.toInt()
+        } else {
+            return VAR_NOT_SET
+        }
     }
 }
 

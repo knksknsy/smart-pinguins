@@ -40,7 +40,7 @@ class DeviceBroadcast {
         setUnsignedChar(byteArray, 6, ternary(isEmergency, 1, 0))
         setUnsignedChar(byteArray, 7, ternary(isSlippery, 1, 0))
         setUnsignedChar(byteArray, 8, ternary(isJam, 1, 0))
-        setShort(byteArray, 9, deviceId);
+        setShort(byteArray, 9, deviceId)
         return byteArray
     }
 

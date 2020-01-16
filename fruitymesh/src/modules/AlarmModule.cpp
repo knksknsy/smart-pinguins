@@ -235,17 +235,21 @@ void AlarmModule::BroadcastPenguinAdvertisingPacket()
 		alarmData->nearestRescueLaneNodeId = nearestRescueLaneNodeId;
 		alarmData->nearestTrafficJamNodeId = nearestTrafficJamNodeId;
 		alarmData->nearestBlackIceNodeId = nearestBlackIceNodeId;
+		logt("ALARMMOD", " ");
+		logt("ALARMMOD", "GLOBAL ALARM STATES:");
+		logt("ALARMMOD", "nearestRescueLaneNodeId = %u", nearestRescueLaneNodeId);
+		logt("ALARMMOD", "nearestTrafficJamNodeId = %u", nearestTrafficJamNodeId);
+		logt("ALARMMOD", "nearestBlackIceNodeId = %u", nearestBlackIceNodeId);
+		logt("ALARMMOD", " ");
 		alarmData->nearestRescueLaneOppositeLaneNodeId = nearestRescueLaneOppositeLaneNodeId;
 		alarmData->nearestTrafficJamOppositeLaneNodeId = nearestTrafficJamOppositeLaneNodeId;
 		alarmData->nearestBlackIceOppositeLaneNodeId = nearestBlackIceOppositeLaneNodeId;
 	}
 	alarmData->direction =GS->node.configuration.direction;
-	alarmData->advertisingChannel = currentAdvChannel + 1;
 
 	//logt("ALARM_SYSTEM", "unsecureCount: %u", meshDeviceIdArray.size());
 
 	alarmData->nodeId = GS->node.configuration.nodeId;
-	alarmData->txPower = Boardconfig->calibratedTX;
 
 	//logt("ALARM_SYSTEM", "txPower: %u", Boardconfig->calibratedTX);
 
@@ -535,33 +539,33 @@ void AlarmModule::GapAdvertisementReportEventHandler(const GapAdvertisementRepor
 	{
 		const AdvPacketCarData *packetData = (const AdvPacketCarData *)&packetHeader->data;
 
-		// // Logging hex values of packetHeader
-		// const advPacketCarServiceAndDataHeader header = *packetHeader;
-		// unsigned char *rawDataPtr1 = (unsigned char *)&header;
-		// u16 size1 = sizeof(header);
-		// logt("ALARMMOD", "raw data (advPacketCarServiceAndDataHeader):\n");
-		// while (size1--)
-		// {
-		// 	logt("ALARMMOD", "0x%02X", *rawDataPtr1++);
-		// }
-		// // Logging hex values of packetData
-		// const AdvPacketCarData data = *packetData;
-		// unsigned char *rawDataPtr2 = (unsigned char *)&data;
-		// u16 size2 = sizeof(data);
-		// logt("ALARMMOD", "raw data (AdvPacketCarData):\n");
-		// while (size2--)
-		// {
-		// 	logt("ALARMMOD", "0x%02X", *rawDataPtr2++);
-		// }
-		// // Logging values of packetHeader
-		// logt("ALARMMOD", "advPacketCarServiceAndDataHeader:\n");
-		// logt("ALARMMOD", "flags: 0x%02X,\nmway_service_uuid: 0x%02X,\nflags2: 0x%02X\nmway_service_uuid2: 0x%02X\n",
-		// 	 packetHeader->flags,
-		// 	 packetHeader->mway_service_uuid,
-		// 	 packetHeader->flags2,
-		// 	 packetHeader->mway_service_uuid2);
-		// // Logging values of packetData
-		logt("ALARMMOD", "advPacketAssetServiceData:\nlen: 0x%02X,\ntype: 0x%02X,\nmessageType: 0x%02X,\ndeviceID: 0x%02X,\ndeviceType: 0x%02X,\ndirection: 0x%02X,\nisEmergency: 0x%02X,\nisSlippery: 0x%02X,\nisJam: 0x%02X",
+		// Logging hex values of packetHeader
+		const advPacketCarServiceAndDataHeader header = *packetHeader;
+		unsigned char *rawDataPtr1 = (unsigned char *)&header;
+		u16 size1 = sizeof(header);
+		logt("ALARMMOD", "raw data (advPacketCarServiceAndDataHeader):\n");
+		while (size1--)
+		{
+			logt("ALARMMOD", "0x%02X", *rawDataPtr1++);
+		}
+		// Logging hex values of packetData
+		const AdvPacketCarData data = *packetData;
+		unsigned char *rawDataPtr2 = (unsigned char *)&data;
+		u16 size2 = sizeof(data);
+		logt("ALARMMOD", "raw data (AdvPacketCarData):\n");
+		while (size2--)
+		{
+			logt("ALARMMOD", "0x%02X", *rawDataPtr2++);
+		}
+		// Logging values of packetHeader
+		logt("ALARMMOD", "advPacketCarServiceAndDataHeader:\n");
+		logt("ALARMMOD", "flags: 0x%X,\nmway_service_uuid: 0x%X,\nflags2: 0x%X\nmway_service_uuid2: 0x%X\n",
+			 packetHeader->flags,
+			 packetHeader->mway_service_uuid,
+			 packetHeader->flags2,
+			 packetHeader->mway_service_uuid2);
+		// Logging values of packetData
+		logt("ALARMMOD", "advPacketAssetServiceData:\nlen: 0x%X,\ntype: 0x%X,\nmessageType: 0x%X,\ndeviceID: 0x%X,\ndeviceType: 0x%X,\ndirection: 0x%X,\nisEmergency: 0x%X,\nisSlippery: 0x%X,\nisJam: 0x%X",
 			 packetData->len,
 			 packetData->type,
 			 packetData->messageType,
@@ -585,7 +589,7 @@ void AlarmModule::GapAdvertisementReportEventHandler(const GapAdvertisementRepor
 				if (!trafficJamPool1.has(packetData->deviceID))
 				{
 					trafficJamPool1[trafficJamPool1.size()] = packetData->deviceID;
-					logt("ALARMMOD", "trafficJamPool1[%u] = %u", trafficJamPool1.size(), packetData->direction);
+					logt("ALARMMOD", "trafficJamPool1[%u] = %u", trafficJamPool1.size(), packetData->deviceID);
 					logt("ALARMMOD", " ");
 				}
 			}
@@ -597,7 +601,7 @@ void AlarmModule::GapAdvertisementReportEventHandler(const GapAdvertisementRepor
 				if (!trafficJamPool2.has(packetData->deviceID))
 				{
 					trafficJamPool2[trafficJamPool2.size()] = packetData->deviceID;
-					logt("ALARMMOD", "trafficJamPool2[%u] = %u", trafficJamPool2.size(), packetData->direction);
+					logt("ALARMMOD", "trafficJamPool2[%u] = %u", trafficJamPool2.size(), packetData->deviceID);
 					logt("ALARMMOD", " ");
 				}
 			}
@@ -609,7 +613,7 @@ void AlarmModule::GapAdvertisementReportEventHandler(const GapAdvertisementRepor
 				if (!trafficJamPool3.has(packetData->deviceID))
 				{
 					trafficJamPool3[trafficJamPool3.size()] = packetData->deviceID;
-					logt("ALARMMOD", "trafficJamPool3[%u] = %u", trafficJamPool3.size(), packetData->direction);
+					logt("ALARMMOD", "trafficJamPool3[%u] = %u", trafficJamPool3.size(), packetData->deviceID);
 					logt("ALARMMOD", " ");
 				}
 			}
@@ -649,7 +653,9 @@ void AlarmModule::TimerEventHandler(u16 passedTimeDs)
 
 		u8 intersections = intersection(trafficJamPool1, trafficJamPool2, trafficJamPool3);
 		logt("ALARMMOD", "intersection = %u", intersections);
+		logt("ALARMMOD", "nearestRescueLaneNodeId = %u", nearestRescueLaneNodeId);
 		logt("ALARMMOD", "nearestTrafficJamNodeId = %u", nearestTrafficJamNodeId);
+		logt("ALARMMOD", "nearestBlackIceNodeId = %u", nearestBlackIceNodeId);
 		logt("ALARMMOD", " ");
 
 		if (nearestTrafficJamNodeId != GS->node.configuration.nodeId && intersections > 0)
