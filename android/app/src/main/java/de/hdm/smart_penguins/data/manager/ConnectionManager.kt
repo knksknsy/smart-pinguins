@@ -102,15 +102,16 @@ class ConnectionManager @Inject constructor(
                                     true
                                 )
                             }
-                            continue
+                        }else{
+                            val node = BleNode(scanResult)
+                            if (node.messageMeshAccessBroadcast!!.messageType == Constants.MESSAGE_TYPE_BROADCAST) {
+                                nodeList.addNode(node)
+                            }
                         }
 
                     } catch (ex: Exception) {
                     }
-                    val node = BleNode(scanResult)
-                    if (node.messageMeshAccessBroadcast!!.messageType == Constants.MESSAGE_TYPE_BROADCAST) {
-                        nodeList.addNode(node)
-                    }
+
                 }
 
             }
