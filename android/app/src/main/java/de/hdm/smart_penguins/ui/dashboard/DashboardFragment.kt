@@ -22,6 +22,7 @@ class DashboardFragment : BaseFragment() {
         return inflater.inflate(R.layout.fragment_dashboard, container, false)
 
     }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         if (dataManager.device == Constants.DEVICE_TYPE_EMERGENCY) {
@@ -69,10 +70,14 @@ class DashboardFragment : BaseFragment() {
         super.onResume()
         nodesLiveData.observe(this, Observer { data ->
             if (data.size > 0 && data[0].messageMeshAccessBroadcast != null) {
-                nodeId.text = data[0].messageMeshAccessBroadcast!!.deviceNumber.toString()
-                type.text = data[0].messageMeshAccessBroadcast!!.type.toString()
-                clusterSize.text = data[0].messageMeshAccessBroadcast!!.clusterSize.toString()
-                direction.text = data[0].messageMeshAccessBroadcast!!.direction.toString()
+                nodeId.text =
+                    "NodeId: " + data[0].messageMeshAccessBroadcast!!.deviceNumber.toString()
+                type.text = "Type: " + data[0].messageMeshAccessBroadcast!!.type.toString()
+                clusterSize.text =
+                    "Clustersize: " + data[0].messageMeshAccessBroadcast!!.clusterSize.toString()
+                direction.text =
+                    "Direction: " + data[0].messageMeshAccessBroadcast!!.direction.toString()
+                deviceDirection.text = "DeviceDirection: " + dataManager.direction
             }
         })
     }

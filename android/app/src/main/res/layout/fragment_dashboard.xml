@@ -115,7 +115,12 @@
             android:layout_height="wrap_content"
             android:padding="10dp"
             android:textColor="@color/White" />
-
+        <TextView
+            android:id="@+id/deviceDirection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="10dp"
+            android:textColor="@color/White" />
     </LinearLayout>
 
 
