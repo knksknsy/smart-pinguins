@@ -43,7 +43,7 @@ using namespace std;
 #define TRAFFIC_JAM_POOL_SIZE 10
 
 //Service Data (max. 24 byte)
-#define SIZEOF_ADV_STRUCTURE_ALARM_SERVICE_DATA 22 //ToDo
+#define SIZEOF_ADV_STRUCTURE_ALARM_SERVICE_DATA 19 //ToDo
 // Message from Mesh to Car
 typedef struct {
 	//6 byte header
@@ -51,11 +51,9 @@ typedef struct {
     u8 type; 
     u16 uuid;
     u16 messageType;
-	u8 advertisingChannel :2;// 0 = not available, 1=37, 2=38, 3=39
  
     //3 byte additional beacon information
     u8 nodeId;
-	i8 txPower;
     u8 boardType; //Nur für Debugging
  
     //3 byte cluster information

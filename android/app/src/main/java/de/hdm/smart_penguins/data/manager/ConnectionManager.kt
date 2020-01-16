@@ -88,9 +88,11 @@ class ConnectionManager @Inject constructor(
                         )
                 if (isMwayMessage) {
                     try {
-                        val deviceBroadcast: DeviceBroadcast = DeviceBroadcast().initWithBytes(
-                            scanResult.scanRecord!!.bytes!!
-                        )
+                        val deviceBroadcast: DeviceBroadcast = DeviceBroadcast().initWithBytes(scanResult.scanRecord!!.bytes!!)
+                        Log.e(TAG, "SCANRECORD BYTES:")
+                        for (byte in scanResult.scanRecord!!.bytes!!) {
+                            Log.e(TAG, byte.toString())
+                        }
                         Log.e(TAG, "Received device broadcast")
                         if (deviceBroadcast.messageType == MESSAGE_TYPE_DEVICE_BROADCAST) {
                             if (deviceBroadcast.type == Constants.DEVICE_TYPE_BIKE && dataManager.isRightTurn) {
@@ -105,8 +107,7 @@ class ConnectionManager @Inject constructor(
                             continue
                         }
 
-                    } catch (ex: Exception) {
-                    }
+                    } catch (ex: Exception) { }
                     val node = BleNode(scanResult)
                     if (node.messageMeshAccessBroadcast!!.messageType == Constants.MESSAGE_TYPE_BROADCAST) {
                         nodeList.addNode(node)

@@ -48,7 +48,6 @@ class DataManager @Inject constructor(
                 .filter { id -> id.nodeID == deviceNumber.toLong() }
                 .findFirst()
         return ternary(node.isPresent, node.get().direction.toInt(), VAR_NOT_SET)
-
     }
 }
 
