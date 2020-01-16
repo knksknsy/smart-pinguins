@@ -14,6 +14,7 @@ import kotlinx.android.synthetic.main.fragment_home.*
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
+import java.lang.NullPointerException
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -59,7 +60,13 @@ class HomeFragment : BaseFragment() {
                 while (bufferedReader.readLine().also({ line = it }) != null) {
                     log.append(line)
                 }
-                scrollview.post(Runnable { scrollview.fullScroll(View.FOCUS_DOWN) })
+                try{
+                    scrollview.fullScroll(View.FOCUS_DOWN)
+                }
+                catch (e: NullPointerException){
+                    Log.e("ScrollView",e.toString())
+                }
+
 
                 //terminal.setMovementMethod(ScrollingMovementMethod())
                 terminal.text =log.toString()
