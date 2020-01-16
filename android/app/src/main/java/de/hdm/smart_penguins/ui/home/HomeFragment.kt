@@ -55,7 +55,7 @@ class HomeFragment : BaseFragment() {
                 val bufferedReader = BufferedReader(
                     InputStreamReader(process.inputStream)
                 )
-                val log = StringBuilder()
+                var log = StringBuilder()
                 var line: String? = ""
                 while (bufferedReader.readLine().also({ line = it }) != null) {
                     log.append(line)
@@ -67,6 +67,10 @@ class HomeFragment : BaseFragment() {
                     Log.e("ScrollView",e.toString())
                 }
 
+                if(log.length > 80000){
+                    log = log.delete(0,log.length/2)
+                    Log.e("logDelete",log.length.toString())
+                }
 
                 //terminal.setMovementMethod(ScrollingMovementMethod())
                 terminal.text =log.toString()
