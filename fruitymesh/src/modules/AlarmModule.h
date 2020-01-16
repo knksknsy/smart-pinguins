@@ -37,10 +37,11 @@ using namespace std;
 #define SERVICE_DATA_MESSAGE_TYPE_ALARM 25
 #define SERVICE_TYPE_ALARM_UPDATE 33
 #define ALARM_MODULE_BROADCAST_TRIGGER_TIME_DS 3
-#define ALARM_MODULE_TRAFFIC_JAM_DETECTION_TIME_DS 20
+#define ALARM_MODULE_TRAFFIC_JAM_DETECTION_TIME_DS 30
 #define ASSET_PACKET_BUFFER_SIZE 30
 #define ALARM_MODULE_TRAFFIC_JAM_WARNING_RANGE 50
 #define TRAFFIC_JAM_POOL_SIZE 10
+#define TRAFFIC_JAM_DETECTED 1
 
 //Service Data (max. 24 byte)
 #define SIZEOF_ADV_STRUCTURE_ALARM_SERVICE_DATA 19 //ToDo
@@ -208,8 +209,6 @@ private:
 	u8 trafficJamInterval;
 	SimpleArray<u16, TRAFFIC_JAM_POOL_SIZE> trafficJamPool1;
 	SimpleArray<u16, TRAFFIC_JAM_POOL_SIZE> trafficJamPool2;
-	SimpleArray<u16, TRAFFIC_JAM_POOL_SIZE> trafficJamPool3;
-
 
 #pragma pack(pop)
 
@@ -243,7 +242,7 @@ public:
 
 	void UpdateGpioState();
 	
-	u8 intersection(SimpleArray<u16, TRAFFIC_JAM_POOL_SIZE> a, SimpleArray<u16, TRAFFIC_JAM_POOL_SIZE> b, SimpleArray<u16, TRAFFIC_JAM_POOL_SIZE> c);
+	u8 intersection(SimpleArray<u16, TRAFFIC_JAM_POOL_SIZE> a, SimpleArray<u16, TRAFFIC_JAM_POOL_SIZE> b);
 
 	virtual void GapAdvertisementReportEventHandler(const GapAdvertisementReportEvent& advertisementReportEvent) override;
 
