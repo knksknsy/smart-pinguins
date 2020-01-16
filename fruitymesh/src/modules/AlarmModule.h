@@ -42,6 +42,7 @@ using namespace std;
 #define ALARM_MODULE_TRAFFIC_JAM_WARNING_RANGE 50
 #define TRAFFIC_JAM_POOL_SIZE 10
 #define TRAFFIC_JAM_DETECTED 1
+#define RESCUE_CAR_TIMER_INTERVAL 10
 
 //Service Data (max. 24 byte)
 #define SIZEOF_ADV_STRUCTURE_ALARM_SERVICE_DATA 19 //ToDo
@@ -196,7 +197,11 @@ private:
 	u8 nearestBlackIceOppositeLaneNodeId;
 	u8 nearestRescueLaneOppositeLaneNodeId;
 
-	bool mockedBlackIceIsSet;
+	bool trafficJamAtMyNode;
+	bool blackIceAtMyNode;
+	bool rescueLaneAtMyNode;
+
+	u8 rescueTimer;
 
 	AlarmModuleConfiguration configuration;
 	AdvJob* alarmJobHandle;
