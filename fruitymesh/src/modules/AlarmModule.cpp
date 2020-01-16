@@ -580,7 +580,7 @@ void AlarmModule::TimerEventHandler(u16 passedTimeDs)
 
 	if (SHOULD_IV_TRIGGER(GS->appTimerDs + GS->appTimerRandomOffsetDs, passedTimeDs, RESCUE_CAR_TIMER_INTERVAL))
 	{
-		if(rescueTimer == 0) {
+
 		if(rescueTimer == 0 && rescueLaneAtMyNode) {
 			rescueLaneAtMyNode = false;
 			BroadcastAlarmUpdatePacket(GS->node.configuration.nodeId, SERVICE_INCIDENT_TYPE::RESCUE_LANE, SERVICE_ACTION_TYPE::DELETE);
