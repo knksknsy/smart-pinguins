@@ -96,7 +96,7 @@ class ConnectionManager @Inject constructor(
                         }
                         Log.e(TAG, "Received device broadcast")
                         if (deviceBroadcast.messageType == MESSAGE_TYPE_DEVICE_BROADCAST) {
-                            if (deviceBroadcast.type == Constants.DEVICE_TYPE_BIKE && dataManager.isRightTurn) {
+                            if (deviceBroadcast.deviceType == Constants.DEVICE_TYPE_BIKE && dataManager.isRightTurn) {
                                 alarm.value = Alarm(
                                     0,
                                     0,
