@@ -1,7 +1,6 @@
 package de.hdm.smart_penguins.ui.home
 
 import android.os.Bundle
-import android.os.CountDownTimer
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -14,9 +13,22 @@ import kotlinx.android.synthetic.main.fragment_home.*
 
 class HomeFragment : BaseFragment() {
 
+    private var displayCounter = 0
+    private val VAL_SECOND: Long = 1000
+    private val DELAY_REDISPLAY: Long = 10000
+    private val DELAY_DISPLAY = 3
+
     private var root: View? = null
 
-    private val TYPE_EMERGENCY = 1
+    private val TAG = "HomeFragment"
+    private val STATE_NONE = 0
+    private val STATE_EMERGENCY = 1
+    private val STATE_BLACKICE = 2
+    private val STATE_JAM = 3
+    private val STATE_BIKE = 4
+    private var counter = 0
+
+    val cases = ArrayList<Int>()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -28,151 +40,99 @@ class HomeFragment : BaseFragment() {
         return root
     }
 
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        fabDismiss.setOnClickListener({ displayNone() })
+    }
+
     override fun onResume() {
         super.onResume()
-
-        nodesLiveData.observe(this, Observer { data ->
-        })
-
-        var alarmNode = 0
-        //var oldNode = 0
-        var oldNodes = ArrayList<Int>()
-        var locker = false
-
+        dataManager.displayedAlarms.clear()
         alarm.observe(this, Observer { alarm ->
-            whenNotNull(alarm) {
-                alarmNode = alarm.currentNode
-
-                //if(alarmNode != oldNode) {
-                if(alarmNode !in oldNodes){
-                    //oldNode = alarmNode
-                    oldNodes.add(alarmNode)
-                    val cases = mutableListOf<String>()
-                    var finishFlag = false
-
-                    if (0 != alarm.nearestRescueLaneNodeId) {
-                        cases.add("emergency")
+            Log.e(TAG, (System.currentTimeMillis() / 1000).toString())
+            if (alarm != null) {
+                //if (alarm.currentNode !in dataManager.displayedAlarms && cases.size == 0) {
+                if(cases.size == 0){
+                    if (STATE_NONE != alarm.nearestRescueLaneNodeId) {
+                        cases.add(STATE_EMERGENCY)
+                        counter += 2
                     }
-                    if (0 != alarm.nearestTrafficJamNodeId) {
-                        cases.add("jam")
+                    if (STATE_NONE != alarm.nearestTrafficJamNodeId) {
+                        cases.add(STATE_JAM)
+                        counter += 2
                     }
-                    if (0 != alarm.nearestBlackIceNode) {
-                        cases.add("blackice")
+                    if (STATE_NONE != alarm.nearestBlackIceNode) {
+                        cases.add(STATE_BLACKICE)
+                        counter += 2
                     }
-
-                    if(alarm.isBikeNear == true) {
-                        cases.add("bike")
+                    //TODO
+                    if (alarm.isBikeNear) {
+                        cases.add(0, STATE_BIKE)
+                        counter += 2
                     }
-                    cases.add("")
-
-                    if(locker == false) {
-                        locker = true
-                        finishFlag = execCase(cases, locker)
-                        val timerReset = object: CountDownTimer(30000, 1000) {
-                            override fun onTick(millisUntilFinished: Long) {
-                                //Log.e("Tick:","Timer running")
-                            }
-                            override fun onFinish() {
-                                oldNodes.clear()
-                                Log.e("Timer:","Timer reset")
-                            }
-                        }.start()
-                        locker = finishFlag
-                    }
-                    else{
-                        Log.e("Function blocker","Old function in pipeline")
-                    }
-
+                    Log.e(
+                        TAG, "Emergency: " + alarm.nearestRescueLaneNodeId.toString()
+                                + " Jam: " + alarm.nearestTrafficJamNodeId.toString()
+                                + " Blackice: " + alarm.nearestBlackIceNode.toString()
+                                + " Device Nr: " + alarm.currentNode.toString()
+                    )
+                    dataManager.displayedAlarms.add(alarm.currentNode)
                 }
-                else{
-                    Log.e("OldNodes",oldNodes.toString())
-                }
-
-                Log.e("Emergency", alarm.nearestRescueLaneNodeId.toString())
-                Log.e("Jam", alarm.nearestTrafficJamNodeId.toString())
-                Log.e("Blackice", alarm.nearestBlackIceNode.toString())
-                Log.e("Device Nr", alarm.currentNode.toString())
-
+                Log.e("DisplayedNodes", dataManager.displayedAlarms.toString())
             }
+            tickTack();
         })
     }
 
-    private fun execCase(cases: MutableList<String>, locker: Boolean): Boolean {
-        var locker = locker
-        val caseSize = cases.size
-        val timeInterval: Long = 7000
-        val timeAll: Long = caseSize.toLong() * timeInterval
-        val it: ListIterator<String> = cases.listIterator()
-
-        val timer = object : CountDownTimer(timeAll, timeInterval) {
-            override fun onTick(millisUntilFinished: Long) {
-                if (it.hasNext()) {
-                    val e = it.next()
-                    setVisibility(e.toString())
-                }
+    private fun tickTack() {
+        Log.e(TAG,"Counter " + counter + " Cases: " + cases.size)
+        if (counter > 0 && cases.size > 0) {
+            display(cases[0])
+            displayCounter += 1
+            if (displayCounter == 2) {
+                cases.removeAt(0)
+                displayCounter = 0
             }
+        } else {
+            cases.clear()
+            displayNone()
+            platzhalter.visibility = View.VISIBLE
+        }
+        if(counter > 0) counter -= 1
 
-            override fun onFinish() {
-                setVisibility("reset")
-                locker = false
-            }
-        }.start()
-
-        return locker
-    }
-
-    private fun BEISPIELZUMAENDERNDERBROADCASTNACHRICHT() {
-        //TODO Change values und update Broadcasting
-        dataManager.isSlippery = true
-        connectionManager.updateBleBroadcasting()
-        dataManager.device
     }
 
 
-    private fun setVisibility(title: String) {
-        if (view != null) {
+    private fun display(state: Int) {
+        displayNone()
+        when (state) {
+            STATE_EMERGENCY -> {
+                emergency.visibility = View.VISIBLE
+            }
+            STATE_BLACKICE -> {
+                balckice.visibility = View.VISIBLE
+            }
+            STATE_JAM -> {
+                jam.visibility = View.VISIBLE
+            }
+            STATE_BIKE -> {
+                bike.visibility = View.VISIBLE
+            }
+        }
+    }
+
+    private fun displayNone() {
+        if (isVisible) {
             platzhalter.visibility = View.GONE
             emergency.visibility = View.GONE
             balckice.visibility = View.GONE
             jam.visibility = View.GONE
             bike.visibility = View.GONE
-
-            when (title) {
-                "emergency" -> {
-                    emergency.visibility = View.VISIBLE
-                }
-                "blackice" -> {
-                    balckice.visibility = View.VISIBLE
-                }
-                "jam" -> {
-                    jam.visibility = View.VISIBLE
-                }
-                "bike" -> {
-                    bike.visibility = View.VISIBLE
-                }
-                "reset" -> {
-                    emergency.visibility = View.GONE
-                    balckice.visibility = View.GONE
-                    jam.visibility = View.GONE
-                    bike.visibility = View.GONE
-                    platzhalter.visibility = View.VISIBLE
-                }
-                else -> {
-                    Log.e("Title", title)
-                    platzhalter.visibility = View.VISIBLE
-                }
-            }
         }
     }
 
     override fun onPause() {
         super.onPause()
         alarm.removeObservers(this)
-        nodesLiveData.removeObservers(this)
     }
-
-    inline fun <T : Any, R> whenNotNull(input: T?, callback: (T) -> R): R? {
-        return input?.let(callback)
-    }
-
 }

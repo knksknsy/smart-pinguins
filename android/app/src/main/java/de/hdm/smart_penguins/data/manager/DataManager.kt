@@ -26,6 +26,7 @@ class DataManager @Inject constructor(
     var isRightTurn = false
     var isLeftTurn = false
     var deviceId = System.currentTimeMillis()
+    val displayedAlarms = ArrayList<Int>()
 
 
     fun getDeviceBroadcast(): ByteArray {

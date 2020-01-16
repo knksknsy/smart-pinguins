@@ -67,6 +67,8 @@ class ConnectionManager @Inject constructor(
             if (results.size > 0) {
                 mScanResultHandler.removeCallbacks(mScanResultRunnable)
                 receiveMeshAccessBroadcastFromBatch(results)
+            } else {
+                alarm.value == null
             }
         }
 
@@ -90,12 +92,8 @@ class ConnectionManager @Inject constructor(
                     try {
                         val deviceBroadcast: DeviceBroadcast =
                             DeviceBroadcast().initWithBytes(scanResult.scanRecord!!.bytes!!)
-                        Log.e(TAG, "SCANRECORD BYTES:")
-                        for (byte in scanResult.scanRecord!!.bytes!!) {
-                            Log.e(TAG, byte.toString())
-                        }
-                        Log.e(TAG, "Received device broadcast")
                         if (deviceBroadcast.messageType == MESSAGE_TYPE_DEVICE_BROADCAST) {
+                            Log.e(TAG, "Received device broadcast")
                             if (deviceBroadcast.deviceType == Constants.DEVICE_TYPE_BIKE && dataManager.isRightTurn) {
                                 alarm.value = Alarm(
                                     0,
@@ -104,9 +102,12 @@ class ConnectionManager @Inject constructor(
                                     deviceBroadcast.deviceId,
                                     true
                                 )
+                            }else{
+                                alarm.value == null
                             }
                         } else {
                             val node = BleNode(scanResult)
+                            Log.e(TAG, "Received node")
                             if (node.messageMeshAccessBroadcast!!.messageType == Constants.MESSAGE_TYPE_BROADCAST) {
                                 nodeList.addNode(node)
                             }
@@ -124,12 +125,13 @@ class ConnectionManager @Inject constructor(
             val broadcast = nodeList.get(0).messageMeshAccessBroadcast
             Log.e(TAG, broadcast?.deviceNumber.toString())
             checkNodeForAlarm(broadcast)
+        } else {
+            alarm.value == null
         }
     }
 
     private fun checkNodeForAlarm(broadcast: MessageMeshBroadcast?) {
         if (broadcast != null) {
-
             val direction = dataManager.getDirectionForNode(broadcast.deviceNumber)
             val isMyDirection = sensorManager.isMyDirection(
                 ternary(direction != VAR_NOT_SET, direction, broadcast.direction.toInt())
@@ -154,6 +156,8 @@ class ConnectionManager @Inject constructor(
                     broadcast.deviceNumber.toInt(),
                     false
                 )
+            } else {
+                alarm.value = null
             }
         }
     }
@@ -315,7 +319,7 @@ class ConnectionManager @Inject constructor(
             callback
         )
         /* // After onAdvertisingSetStarted callback is called, you can modify the
-// advertising data and scan response data:
+    // advertising data and scan response data:
 
          // Wait for onAdvertisingDataSet callback...
          currentAdvertisingSet.setScanResponseData(
@@ -326,7 +330,7 @@ class ConnectionManager @Inject constructor(
              ).build()
          )
          // Wait for onScanResponseDataSet callback...
-// When done with the advertising:
+    // When done with the advertising:
          advertiser.stopAdvertisingSet(callback)
 
           */
