@@ -35,6 +35,9 @@ import javax.inject.Singleton
 class ConnectionManager @Inject constructor(
     var application: SmartApplication
 ) {
+    private var doUpdateBroacast: Boolean = false
+    private val VAL_BROADCAST_UPDATE_DELAY = 3
+    private var broadcastUpdateTimer: Int = 0
     private var currentAdvertisingSet: AdvertisingSet? = null
     private var callback: Any? = null
     private var advertiser: BluetoothLeAdvertiser? = null
@@ -63,7 +66,8 @@ class ConnectionManager @Inject constructor(
 
         override fun onBatchScanResults(results: List<ScanResult>) {
             super.onBatchScanResults(results)
-
+            broadcastUpdateTimer += 1
+            if(doUpdateBroacast) updateBleBroadcasting()
             if (results.size > 0) {
                 mScanResultHandler.removeCallbacks(mScanResultRunnable)
                 receiveMeshAccessBroadcastFromBatch(results)
@@ -76,7 +80,7 @@ class ConnectionManager @Inject constructor(
 
     private fun receiveMeshAccessBroadcastFromBatch(results: List<ScanResult>) {
         nodeList.clearNodes()
-        var  bikeAlarmId = VAR_NOT_SET
+        var bikeAlarmId = VAR_NOT_SET
         for (scanResult in results) {
             if (scanResult.scanRecord != null &&
                 scanResult.scanRecord!!.bytes != null &&
@@ -111,7 +115,7 @@ class ConnectionManager @Inject constructor(
         }
         nodeList.sort()
         nodesLiveData.value = nodeList
-        if(bikeAlarmId != VAR_NOT_SET){
+        if (bikeAlarmId != VAR_NOT_SET) {
             alarm.value = Alarm(
                 0,
                 0,
@@ -119,12 +123,10 @@ class ConnectionManager @Inject constructor(
                 bikeAlarmId,
                 true
             )
-        }
-        else if (nodeList.size > 0) {
+        } else if (nodeList.size > 0) {
             val broadcast = nodeList.get(0).messageMeshAccessBroadcast
-            Log.e(TAG, broadcast?.deviceNumber.toString())
             checkNodeForAlarm(broadcast)
-        }else {
+        } else {
             alarm.value = null
         }
     }
@@ -317,23 +319,6 @@ class ConnectionManager @Inject constructor(
             null,
             callback
         )
-        /* // After onAdvertisingSetStarted callback is called, you can modify the
-    // advertising data and scan response data:
-
-         // Wait for onAdvertisingDataSet callback...
-         currentAdvertisingSet.setScanResponseData(
-             AdvertiseData.Builder().addServiceUuid(
-                 ParcelUuid(
-                     randomUUID()
-                 )
-             ).build()
-         )
-         // Wait for onScanResponseDataSet callback...
-    // When done with the advertising:
-         advertiser.stopAdvertisingSet(callback)
-
-          */
-
     }
 
     fun getBroadCastData(): AdvertiseData {
@@ -358,13 +343,19 @@ class ConnectionManager @Inject constructor(
     }
 
     fun updateBleBroadcasting() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            currentAdvertisingSet?.setAdvertisingData(
-                getBroadCastData()
-            )
-        } else {
-            stopBLEScanner()
-            initBleBroadcasting()
+        if (broadcastUpdateTimer > VAL_BROADCAST_UPDATE_DELAY) {
+            broadcastUpdateTimer = 0
+            doUpdateBroacast = false
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                currentAdvertisingSet?.setAdvertisingData(
+                    getBroadCastData()
+                )
+            } else {
+                stopBLEScanner()
+                initBleBroadcasting()
+            }
+        }else{
+            doUpdateBroacast = true
         }
     }
 

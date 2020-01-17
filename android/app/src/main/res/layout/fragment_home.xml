@@ -1,81 +1,179 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:paddingTop="30dp">
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toTopOf="@id/guideline"
+        app:layout_constraintGuide_percent="0.90" />
 
     <LinearLayout
         android:id="@+id/platzhalter"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="0dp"
+        android:layout_margin="10dp"
         android:orientation="vertical"
-        android:layout_margin="10dp">
+        app:layout_constraintBottom_toTopOf="@id/guideline"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:layout_editor_absoluteX="10dp">
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Smart Penguin" />
+
         <LinearLayout
-            android:layout_margin="8dp"
-            android:background="@color/GreenYellow"
-            android:layout_width="match_parent"
-            android:layout_height="450dp">
-        <ScrollView
-            android:id="@+id/scrollview"
-            android:background="@color/defaultBtn"
-            android:padding="1dp"
+            android:id="@+id/developerView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:fadeScrollbars="false"
-            android:scrollbarAlwaysDrawVerticalTrack="true"
-            android:scrollbars="vertical">
+            android:layout_margin="8dp"
+            android:orientation="vertical">
 
-            <TextView
-                android:padding="2dp"
-                android:id="@+id/terminal"
+            <ScrollView
+                android:id="@+id/scrollview"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:scrollbars="vertical"
-                android:textColor="@color/White" />
-        </ScrollView>
+                android:layout_weight="3"
+                android:background="@color/defaultBtn"
+                android:fadeScrollbars="false"
+                android:padding="1dp"
+                android:scrollbarAlwaysDrawVerticalTrack="true"
+                android:scrollbars="vertical">
+
+                <TextView
+                    android:id="@+id/terminal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="2dp"
+                    android:scrollbars="vertical"
+                    android:textColor="@color/White"
+                    android:textSize="12sp" />
+            </ScrollView>
+
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/nodeId"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:padding="10dp"
+                    android:textColor="@color/White" />
+
+                <TextView
+                    android:id="@+id/clusterSize"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:padding="10dp"
+                    android:textColor="@color/White" />
+
+                <TextView
+                    android:id="@+id/type"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:padding="10dp"
+                    android:textColor="@color/White" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+
+                <TextView
+                    android:id="@+id/deviceDirection"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="2"
+                    android:padding="10dp"
+                    android:textColor="@color/White" />
+
+                <TextView
+                    android:id="@+id/direction"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:padding="10dp"
+                    android:textColor="@color/White" />
+
+            </LinearLayout>
+
         </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/productView"
+            android:layout_width="match_parent"
+            android:layout_height="550dp"
+            android:layout_margin="8dp"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="STYLE ME"
+                android:textColor="@color/White"
+                android:textSize="20sp" />
+        </LinearLayout>
+
     </LinearLayout>
 
     <LinearLayout
         android:id="@+id/emergency"
-        android:visibility="gone"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:visibility="gone">
 
-        <include layout="@layout/fragment_emergency"/>
+        <include layout="@layout/fragment_emergency" />
     </LinearLayout>
 
 
     <LinearLayout
         android:id="@+id/jam"
-        android:visibility="gone"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:visibility="gone">
 
-        <include layout="@layout/fragment_jam"/>
+        <include layout="@layout/fragment_jam" />
     </LinearLayout>
 
     <LinearLayout
         android:id="@+id/balckice"
-        android:visibility="gone"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:visibility="gone">
 
-        <include layout="@layout/fragment_blackice"/>
+        <include layout="@layout/fragment_blackice" />
     </LinearLayout>
 
     <LinearLayout
         android:id="@+id/bike"
-        android:visibility="gone"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:visibility="gone">
 
-        <include layout="@layout/fragment_bicycle"/>
+        <include layout="@layout/fragment_bicycle" />
     </LinearLayout>
 
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+
+        android:id="@+id/fabProduct"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end|bottom"
+        android:layout_marginRight="10dp"
+        android:src="@drawable/ic_arrow_right"
+        app:layout_constraintBottom_toTopOf="@id/guideline"
+        app:layout_constraintEnd_toEndOf="parent" />
 </androidx.constraintlayout.widget.ConstraintLayout>

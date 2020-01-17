@@ -1,28 +1,32 @@
 package de.hdm.smart_penguins.data.manager
 
 import android.content.Context
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import de.hdm.smart_penguins.SmartApplication
+import de.hdm.smart_penguins.component.AlarmLiveData
 import javax.inject.Inject
 import javax.inject.Singleton
-import android.hardware.*
-import android.hardware.SensorManager
-
 
 
 @Singleton
 class PhoneSensorManager @Inject constructor(
     var application: SmartApplication
 
-): SensorEventListener {
+) : SensorEventListener {
 
     @Inject
     lateinit var connectionManager: ConnectionManager
 
     @Inject
+    lateinit var alarmLiveData: AlarmLiveData
+    @Inject
     lateinit var dataManager: DataManager
 
     private lateinit var sensorManager: SensorManager
-    private var mAccelerometer : Sensor ?= null
+    private var mAccelerometer: Sensor? = null
     private var mMagnetometer: Sensor? = null
     private var mLastAccelerometer = FloatArray(3)
     private var mLastMagnetometer = FloatArray(3)
@@ -42,12 +46,15 @@ class PhoneSensorManager @Inject constructor(
         sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)?.let {
             this.mMagnetometer = it
         }
-        sensorManager!!.registerListener(this,mAccelerometer,
-            SensorManager.SENSOR_DELAY_GAME)
-        sensorManager!!.registerListener(this,mMagnetometer,
-            SensorManager.SENSOR_DELAY_GAME)
+        sensorManager!!.registerListener(
+            this, mAccelerometer,
+            SensorManager.SENSOR_DELAY_GAME
+        )
+        sensorManager!!.registerListener(
+            this, mMagnetometer,
+            SensorManager.SENSOR_DELAY_GAME
+        )
     }
-
 
 
     override fun onAccuracyChanged(sensor: Sensor?, p1: Int) {
@@ -77,8 +84,9 @@ class PhoneSensorManager @Inject constructor(
                 currentPhoneDirection = 0f
             }
             // set phone direction in dataManager if it changed
-            if(dataManager.direction != Math.round(currentPhoneDirection)) {
+            if (dataManager.direction != Math.round(currentPhoneDirection)) {
                 dataManager.direction = Math.round(currentPhoneDirection)
+
                 connectionManager.updateBleBroadcasting()
             }
 
@@ -90,8 +98,8 @@ class PhoneSensorManager @Inject constructor(
      *
      * @param direction the direction to evaluate (0 = North, 1-2 = NorthEast, 3 = East, 4-5 = SouthEast, 6 = South, 7-8 = SouthWest, 9 = West, 10 - 11 = NorthWest)
      */
-    fun isMyDirection(direction : Int) : Boolean{
-        if(Math.abs(direction - dataManager.direction) <= 3 || Math.abs(direction - dataManager.direction) >= 9) {
+    fun isMyDirection(direction: Int): Boolean {
+        if (Math.abs(direction - dataManager.direction) <= 3 || Math.abs(direction - dataManager.direction) >= 9) {
             return true
         }
 

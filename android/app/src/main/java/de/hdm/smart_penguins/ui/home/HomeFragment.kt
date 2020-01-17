@@ -5,6 +5,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.view.isVisible
 import androidx.lifecycle.Observer
 import de.hdm.smart_penguins.R
 import de.hdm.smart_penguins.ui.BaseFragment
@@ -42,6 +43,19 @@ class HomeFragment : BaseFragment() {
         return inflater.inflate(R.layout.fragment_home, container, false)
     }
 
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        fabProduct.setOnClickListener {
+            if(developerView.isVisible){
+                developerView.visibility = View.GONE
+                productView.visibility = View.VISIBLE
+            }else{
+                developerView.visibility = View.VISIBLE
+                productView.visibility = View.GONE
+            }
+        }
+    }
+
     private fun updateTimer() {
             try {
                 if(isVisible) {
@@ -73,12 +87,32 @@ class HomeFragment : BaseFragment() {
 
     override fun onResume() {
         super.onResume()
-        dataManager.displayedAlarms.clear()
+        nodesLiveData.observe(this, Observer { data ->
+            if (data.size > 0 && data[0].messageMeshAccessBroadcast != null) {
+                nodeId.text =
+                    "NodeId: " + data[0].messageMeshAccessBroadcast!!.deviceNumber.toString()
+                type.text = "Type: " + data[0].messageMeshAccessBroadcast!!.type.toString()
+                clusterSize.text =
+                    "Clustersize: " + data[0].messageMeshAccessBroadcast!!.clusterSize.toString()
+                direction.text =
+                    "Direction: " + data[0].messageMeshAccessBroadcast!!.direction.toString()
+                deviceDirection.text = "DeviceDirection: " + dataManager.direction
+                nodeId.visibility = View.VISIBLE
+                type.visibility = View.VISIBLE
+                clusterSize.visibility = View.VISIBLE
+                direction.visibility = View.VISIBLE
+            } else {
+                nodeId.visibility = View.INVISIBLE
+                type.visibility = View.INVISIBLE
+                clusterSize.visibility = View.INVISIBLE
+                direction.visibility = View.INVISIBLE
+            }
+        })
         alarm.observe(this, Observer { alarm ->
             Log.e(TAG,"Received Alarm")
             if (alarm != null) {
                 //if (alarm.currentNode !in dataManager.displayedAlarms && cases.size == 0) {
-                if(cases.size == 0){
+                if(cases.size == 0) {
                     if (STATE_NONE != alarm.nearestRescueLaneNodeId) {
                         cases.add(STATE_EMERGENCY)
                         counter += 2
@@ -91,7 +125,7 @@ class HomeFragment : BaseFragment() {
                         cases.add(STATE_BLACKICE)
                         counter += 2
                     }
-                    //TODO
+
                     if (alarm.isBikeNear) {
                         cases.add(0, STATE_BIKE)
                         counter += 2
@@ -102,10 +136,7 @@ class HomeFragment : BaseFragment() {
                                 + " Blackice: " + alarm.nearestBlackIceNode.toString()
                                 + " Device Nr: " + alarm.currentNode.toString()
                     )
-                    dataManager.displayedAlarms.add(alarm.currentNode)
                 }
-                Log.e("DisplayedNodes", dataManager.displayedAlarms.toString())
-
             }
             updateTimer()
             tickTack();
@@ -162,5 +193,6 @@ class HomeFragment : BaseFragment() {
     override fun onPause() {
         super.onPause()
         alarm.removeObservers(this)
+        nodesLiveData.removeObservers(this)
     }
 }
