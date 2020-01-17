@@ -2,11 +2,8 @@ package de.hdm.smart_penguins.ui.home
 
 import android.os.AsyncTask
 import android.os.Bundle
-import android.os.CountDownTimer
-import android.text.method.ScrollingMovementMethod
 import android.util.Log
 import android.view.LayoutInflater
-import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.view.isVisible
@@ -15,7 +12,6 @@ import de.hdm.smart_penguins.R
 import de.hdm.smart_penguins.ui.BaseFragment
 import kotlinx.android.synthetic.main.fragment_home.*
 import java.io.BufferedReader
-import java.io.IOException
 import java.io.InputStreamReader
 import java.util.*
 import kotlin.collections.ArrayList
@@ -29,8 +25,6 @@ class HomeFragment : BaseFragment() {
     private val DELAY_DISPLAY = 3
 
     private var root: View? = null
-    private var onTouch = false
-    val terminalTimerTask = Timer()
 
     private val TAG = "HomeFragment"
     private val STATE_NONE = 0
@@ -219,17 +213,5 @@ class HomeFragment : BaseFragment() {
         super.onPause()
         alarm.removeObservers(this)
         nodesLiveData.removeObservers(this)
-        terminalTimerTask.cancel()
-
-        //asyncTimer.cancel(true)
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        alarm.removeObservers(this)
-        nodesLiveData.removeObservers(this)
-        terminalTimerTask.cancel()
-
-        //asyncTimer.cancel(true)
     }
 }
