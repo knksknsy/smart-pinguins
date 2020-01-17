@@ -109,8 +109,8 @@ class HomeFragment : BaseFragment() {
             }
         })
         alarm.observe(this, Observer { alarm ->
-            Log.e(TAG,"Received Alarm")
             if (alarm != null) {
+                Log.e(TAG,"Received Alarm")
                 //if (alarm.currentNode !in dataManager.displayedAlarms && cases.size == 0) {
                 if(cases.size == 0) {
                     if (STATE_NONE != alarm.nearestRescueLaneNodeId) {
@@ -139,7 +139,7 @@ class HomeFragment : BaseFragment() {
                 }
             }
             updateTimer()
-            tickTack();
+            tickTack()
         })
     }
 
