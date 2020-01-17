@@ -1,9 +1,12 @@
 package de.hdm.smart_penguins.ui.home
 
+import android.os.AsyncTask
 import android.os.Bundle
 import android.os.CountDownTimer
+import android.text.method.ScrollingMovementMethod
 import android.util.Log
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import androidx.lifecycle.Observer
@@ -22,9 +25,13 @@ import kotlin.collections.ArrayList
 class HomeFragment : BaseFragment() {
 
     private var root: View? = null
-
+    private var onTouch = false
+    val terminalTimerTask = Timer()
 
     private val TYPE_EMERGENCY = 1
+
+    val asyncTimer = AsyncTimer()
+
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -39,50 +46,61 @@ class HomeFragment : BaseFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val terminalTimerTask = Timer()
-        terminalTimerTask?.scheduleAtFixedRate(object: TimerTask() {
-            override fun run() {
-                updateTimer()
-            }
-        }, 0, 1000)
+        asyncTimer.execute()
 
     }
 
-    private fun updateTimer() {
-        activity?.runOnUiThread{
-            try {
-                val process = Runtime.getRuntime().exec("logcat -d *:E")
-                val bufferedReader = BufferedReader(
-                    InputStreamReader(process.inputStream)
-                )
-                var log = StringBuilder()
-                var line: String? = ""
-                while (bufferedReader.readLine().also({ line = it }) != null) {
-                    log.append(line)
-                }
-                try{
-                    scrollview.fullScroll(View.FOCUS_DOWN)
-                }
-                catch (e: NullPointerException){
-                    Log.e("ScrollView",e.toString())
-                }
+    inner class AsyncTimer: AsyncTask<Int, String, String>() {
+        var flag = false
 
-                if(log.length > 80000){
-                    log = log.delete(0,log.length/2)
-                    Log.e("logDelete",log.length.toString())
-                }
-
-                //terminal.setMovementMethod(ScrollingMovementMethod())
-                terminal.text =log.toString()
-            }
-            catch (e: IOException) { // Handle Exception
-                Log.e("Terminal Error",e.toString())
-            }
+        override fun onPreExecute() {
+            super.onPreExecute()
+            flag = true
         }
+
+        override fun doInBackground(vararg params: Int?): String {
+            var sender = "Test"
+
+            while(flag) {
+                terminalTimerTask?.scheduleAtFixedRate(object : TimerTask() {
+                    override fun run() {
+                        var log = StringBuilder()
+                        val process = Runtime.getRuntime().exec("logcat -d *:E")
+                        val bufferedReader = BufferedReader(
+                            InputStreamReader(process.inputStream)
+                        )
+                        var line: String? = ""
+                        while (bufferedReader.readLine().also({ line = it }) != null) {
+                            log.append(line)
+                        }
+
+                        if (log.length > 80000) {
+                            log = log.delete(0, log.length / 2)
+                        }
+
+                        sender = log.toString()
+
+                    }
+                }, 0, 1000)
+
+            }
+
+            return sender
+        }
+
+        override fun onPostExecute(result: String?) {
+            super.onPostExecute(result)
+            terminal.text = result
+            scrollview.fullScroll(View.FOCUS_DOWN)
+            flag = false
+        }
+
     }
 
     override fun onResume() {
         super.onResume()
+
+        //asyncTimer.execute()
 
         nodesLiveData.observe(this, Observer { data ->
         })
@@ -228,6 +246,18 @@ class HomeFragment : BaseFragment() {
         super.onPause()
         alarm.removeObservers(this)
         nodesLiveData.removeObservers(this)
+        terminalTimerTask.cancel()
+
+        asyncTimer.cancel(true)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        alarm.removeObservers(this)
+        nodesLiveData.removeObservers(this)
+        terminalTimerTask.cancel()
+
+        asyncTimer.cancel(true)
     }
 
     inline fun <T : Any, R> whenNotNull(input: T?, callback: (T) -> R): R? {
