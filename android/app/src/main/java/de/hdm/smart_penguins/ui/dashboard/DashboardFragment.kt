@@ -41,29 +41,42 @@ class DashboardFragment : BaseFragment() {
 
 
         emergency_btn.setOnClickListener({
-            onResetDevice()
-            onEmergency()
+            onViewClick(it.id)
         })
 
         cycle_btn.setOnClickListener({
-            onResetDevice()
-            onCycle()
+            onViewClick(it.id)
         })
 
         walk_btn.setOnClickListener({
-            onResetDevice()
-            onWalk()
+            onViewClick(it.id)
         })
 
         left_btn.setOnClickListener({
-            onResetIndicator()
-            onLeft()
+            onIndicatiorClick(it.id)
         })
 
         right_btn.setOnClickListener({
-            onResetIndicator()
-            onRight()
+            onIndicatiorClick(it.id)
         })
+    }
+
+    private fun onIndicatiorClick(id: Int) {
+        onResetIndicator()
+        when (id) {
+            R.id.left_btn -> onLeft()
+            R.id.right_btn -> onRight()
+        }
+    }
+
+    private fun onViewClick(id: Int) {
+        onResetDevice()
+        when (id) {
+            R.id.cycle_btn -> onCycle()
+            R.id.emergency_btn -> onEmergency()
+            R.id.walk_btn -> onWalk()
+        }
+        connectionManager.updateBleBroadcasting()
     }
 
     override fun onResume() {
@@ -78,6 +91,16 @@ class DashboardFragment : BaseFragment() {
                 direction.text =
                     "Direction: " + data[0].messageMeshAccessBroadcast!!.direction.toString()
                 deviceDirection.text = "DeviceDirection: " + dataManager.direction
+                nodeId.visibility = View.VISIBLE
+                type.visibility = View.VISIBLE
+                clusterSize.visibility = View.VISIBLE
+                direction.visibility = View.VISIBLE
+            }else{
+                nodeId.visibility = View.INVISIBLE
+                type.visibility = View.INVISIBLE
+                clusterSize.visibility = View.INVISIBLE
+                direction.visibility = View.INVISIBLE
+
             }
         })
     }
@@ -102,21 +125,17 @@ class DashboardFragment : BaseFragment() {
     private fun onLeft() {
         if (dataManager.isLeftTurn == false) {
             left_btn.setBackgroundColor(resources.getColor(R.color.Green))
-            dataManager.isLeftTurn = true
-            dataManager.isRightTurn = false
-        } else {
-            dataManager.isLeftTurn = false
         }
+            dataManager.isLeftTurn = !dataManager.isLeftTurn
+            dataManager.isRightTurn = !dataManager.isRightTurn
     }
 
     private fun onRight() {
         if (dataManager.isRightTurn == false) {
             right_btn.setBackgroundColor(resources.getColor(R.color.Green))
-            dataManager.isRightTurn = true
-            dataManager.isLeftTurn = false
-        } else {
-            dataManager.isRightTurn = false
         }
+        dataManager.isLeftTurn = !dataManager.isLeftTurn
+        dataManager.isRightTurn = !dataManager.isRightTurn
     }
 
     private fun onEmergency() {
@@ -143,6 +162,7 @@ class DashboardFragment : BaseFragment() {
         } else {
             walk_btn.setBackgroundColor(resources.getColor(R.color.LightGrey))
             dataManager.device = Constants.DEVICE_TYPE_WALK
+            connectionManager.updateBleBroadcasting()
         }
     }
 }

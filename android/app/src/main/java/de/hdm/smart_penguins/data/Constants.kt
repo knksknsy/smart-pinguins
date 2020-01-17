@@ -18,7 +18,6 @@ object Constants {
     val DEVICE_TYPE_CAR = 1
     val DEVICE_TYPE_BIKE = 2
     val DEVICE_TYPE_EMERGENCY = 3
-    //TODO: Added WALK TYPE
     val DEVICE_TYPE_WALK = 4
 
     val MESSAGE_ID_SENDER = 32000

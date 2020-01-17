@@ -35,6 +35,9 @@ import javax.inject.Singleton
 class ConnectionManager @Inject constructor(
     var application: SmartApplication
 ) {
+    private var doUpdateBroacast: Boolean = false
+    private val VAL_BROADCAST_UPDATE_DELAY = 3
+    private var broadcastUpdateTimer: Int = 0
     private var currentAdvertisingSet: AdvertisingSet? = null
     private var callback: Any? = null
     private var advertiser: BluetoothLeAdvertiser? = null
@@ -63,10 +66,13 @@ class ConnectionManager @Inject constructor(
 
         override fun onBatchScanResults(results: List<ScanResult>) {
             super.onBatchScanResults(results)
-
+            broadcastUpdateTimer += 1
+            if(doUpdateBroacast) updateBleBroadcasting()
             if (results.size > 0) {
                 mScanResultHandler.removeCallbacks(mScanResultRunnable)
                 receiveMeshAccessBroadcastFromBatch(results)
+            } else {
+                alarm.value = null
             }
         }
 
@@ -74,7 +80,7 @@ class ConnectionManager @Inject constructor(
 
     private fun receiveMeshAccessBroadcastFromBatch(results: List<ScanResult>) {
         nodeList.clearNodes()
-
+        var bikeAlarmId = VAR_NOT_SET
         for (scanResult in results) {
             if (scanResult.scanRecord != null &&
                 scanResult.scanRecord!!.bytes != null &&
@@ -84,34 +90,23 @@ class ConnectionManager @Inject constructor(
                         && scanResult.scanRecord!!.serviceUuids!!.size > 0
                         && scanResult.scanRecord!!.serviceUuids!![0] == ParcelUuid.fromString(
                     SERVICE_UUID
-                )
-                        )
+                ))
                 if (isMwayMessage) {
                     try {
                         val deviceBroadcast: DeviceBroadcast =
                             DeviceBroadcast().initWithBytes(scanResult.scanRecord!!.bytes!!)
-                        Log.e(TAG, "SCANRECORD BYTES:")
-                        for (byte in scanResult.scanRecord!!.bytes!!) {
-                            Log.e(TAG, byte.toString())
-                        }
-                        Log.e(TAG, "Received device broadcast")
+                        val node = BleNode(scanResult)
                         if (deviceBroadcast.messageType == MESSAGE_TYPE_DEVICE_BROADCAST) {
+                            Log.e(TAG, "Received device broadcast")
                             if (deviceBroadcast.deviceType == Constants.DEVICE_TYPE_BIKE && dataManager.isRightTurn) {
-                                alarm.value = Alarm(
-                                    0,
-                                    0,
-                                    0,
-                                    deviceBroadcast.deviceId,
-                                    true
-                                )
+                                bikeAlarmId = deviceBroadcast.deviceId
                             }
-                        } else {
-                            val node = BleNode(scanResult)
-                            if (node.messageMeshAccessBroadcast!!.messageType == Constants.MESSAGE_TYPE_BROADCAST) {
-                                nodeList.addNode(node)
-                            }
+                        } else if (node.messageMeshAccessBroadcast!!.messageType == Constants.MESSAGE_TYPE_BROADCAST) {
+                            Log.e(TAG, "Received node message")
+                            nodeList.addNode(node)
                         }
                     } catch (ex: Exception) {
+                        Log.e(TAG, ex.toString())
                     }
 
                 }
@@ -120,16 +115,24 @@ class ConnectionManager @Inject constructor(
         }
         nodeList.sort()
         nodesLiveData.value = nodeList
-        if (nodeList.size > 0) {
+        if (bikeAlarmId != VAR_NOT_SET) {
+            alarm.value = Alarm(
+                0,
+                0,
+                0,
+                bikeAlarmId,
+                true
+            )
+        } else if (nodeList.size > 0) {
             val broadcast = nodeList.get(0).messageMeshAccessBroadcast
-            Log.e(TAG, broadcast?.deviceNumber.toString())
             checkNodeForAlarm(broadcast)
+        } else {
+            alarm.value = null
         }
     }
 
     private fun checkNodeForAlarm(broadcast: MessageMeshBroadcast?) {
         if (broadcast != null) {
-
             val direction = dataManager.getDirectionForNode(broadcast.deviceNumber)
             val isMyDirection = sensorManager.isMyDirection(
                 ternary(direction != VAR_NOT_SET, direction, broadcast.direction.toInt())
@@ -154,6 +157,8 @@ class ConnectionManager @Inject constructor(
                     broadcast.deviceNumber.toInt(),
                     false
                 )
+            } else {
+                alarm.value = null
             }
         }
     }
@@ -314,23 +319,6 @@ class ConnectionManager @Inject constructor(
             null,
             callback
         )
-        /* // After onAdvertisingSetStarted callback is called, you can modify the
-// advertising data and scan response data:
-
-         // Wait for onAdvertisingDataSet callback...
-         currentAdvertisingSet.setScanResponseData(
-             AdvertiseData.Builder().addServiceUuid(
-                 ParcelUuid(
-                     randomUUID()
-                 )
-             ).build()
-         )
-         // Wait for onScanResponseDataSet callback...
-// When done with the advertising:
-         advertiser.stopAdvertisingSet(callback)
-
-          */
-
     }
 
     fun getBroadCastData(): AdvertiseData {
@@ -355,13 +343,19 @@ class ConnectionManager @Inject constructor(
     }
 
     fun updateBleBroadcasting() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            currentAdvertisingSet?.setAdvertisingData(
-                getBroadCastData()
-            )
-        } else {
-            stopBLEScanner()
-            initBleBroadcasting()
+        if (broadcastUpdateTimer > VAL_BROADCAST_UPDATE_DELAY) {
+            broadcastUpdateTimer = 0
+            doUpdateBroacast = false
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                currentAdvertisingSet?.setAdvertisingData(
+                    getBroadCastData()
+                )
+            } else {
+                stopBLEScanner()
+                initBleBroadcasting()
+            }
+        }else{
+            doUpdateBroacast = true
         }
     }
 

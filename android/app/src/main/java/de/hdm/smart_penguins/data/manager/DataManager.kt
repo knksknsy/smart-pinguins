@@ -1,5 +1,6 @@
 package de.hdm.smart_penguins.data.manager
 
+import android.util.Log
 import de.hdm.smart_penguins.SmartApplication
 import de.hdm.smart_penguins.data.Constants
 import de.hdm.smart_penguins.data.Constants.VAR_NOT_SET
@@ -29,6 +30,7 @@ class DataManager @Inject constructor(
 
 
     fun getDeviceBroadcast(): ByteArray {
+        Log.e(TAG, "Devicetype: " + device + " Direction: " + direction)
         return DeviceBroadcast().init(
             Constants.MESSAGE_SIZE_DEVICE_BROADCAST,
             type,
