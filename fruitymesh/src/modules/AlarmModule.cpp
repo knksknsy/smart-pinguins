@@ -237,23 +237,9 @@ void AlarmModule::BroadcastPenguinAdvertisingPacket()
 		nearestBlackIceNodeId != 0 || nearestBlackIceOppositeLaneNodeId != 0 ||
 		rescueLaneAtMyNode || trafficJamAtMyNode || blackIceAtMyNode || !rescueLaneAtMyNode || !trafficJamAtMyNode || !blackIceAtMyNode)
 	{
-		if(rescueLaneAtMyNode) {
-			alarmData->nearestRescueLaneNodeId = GS->node.configuration.nodeId;
-		} else {
-			alarmData->nearestRescueLaneNodeId = nearestRescueLaneNodeId;
-		}
-
-		if(trafficJamAtMyNode) {
-			alarmData->nearestTrafficJamNodeId = GS->node.configuration.nodeId;
-		} else {
-			alarmData->nearestTrafficJamNodeId = nearestTrafficJamNodeId;
-		}
-
-		if(blackIceAtMyNode) {
-			alarmData->nearestBlackIceNodeId = GS->node.configuration.nodeId;
-		} else {
-			alarmData->nearestBlackIceNodeId = nearestBlackIceNodeId;
-		}
+		alarmData->nearestRescueLaneNodeId = rescueLaneAtMyNode ? GS->node.configuration.nodeId : nearestRescueLaneNodeId;
+		alarmData->nearestTrafficJamNodeId = trafficJamAtMyNode ? GS->node.configuration.nodeId : nearestTrafficJamNodeId;
+		alarmData->nearestBlackIceNodeId = blackIceAtMyNode ? GS->node.configuration.nodeId : nearestBlackIceNodeId;
 
 		alarmData->nearestRescueLaneOppositeLaneNodeId = nearestRescueLaneOppositeLaneNodeId;
 		alarmData->nearestTrafficJamOppositeLaneNodeId = nearestTrafficJamOppositeLaneNodeId;
