@@ -87,7 +87,7 @@ function flash {
         fn_cd "_build/release/NRF52/github/"
         echo $PWD
     fi
-    nrfjprog --program FruityMesh.hex  --sectorerase -r
+    nrfjprog --program FruityMesh.hex --sectorerase -r
     FLASH_FAILED=$?
     echo
 }
