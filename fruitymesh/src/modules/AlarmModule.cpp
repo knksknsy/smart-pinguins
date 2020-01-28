@@ -95,11 +95,13 @@ void AlarmModule::ButtonHandler(u8 buttonId, u32 holdTimeDs)
 
 	// Broadcast a rescue lane alarm
 	if(!blackIceAtMyNode) {
-		BroadcastAlarmUpdatePacket(GS->node.configuration.nodeId, SERVICE_INCIDENT_TYPE::BLACK_ICE, SERVICE_ACTION_TYPE::SAVE);
 		blackIceAtMyNode = true;
+		BroadcastAlarmUpdatePacket(GS->node.configuration.nodeId, SERVICE_INCIDENT_TYPE::BLACK_ICE, SERVICE_ACTION_TYPE::SAVE);
+		logt("BROADCAST", "BroadcastAlarmUpdatePacket(%u, SERVICE_INCIDENT_TYPE::BLACK_ICE, SERVICE_ACTION_TYPE::SAVE);", GS->node.configuration.nodeId);
 	} else {
-		BroadcastAlarmUpdatePacket(GS->node.configuration.nodeId, SERVICE_INCIDENT_TYPE::BLACK_ICE, SERVICE_ACTION_TYPE::DELETE);
 		blackIceAtMyNode = false;
+		BroadcastAlarmUpdatePacket(GS->node.configuration.nodeId, SERVICE_INCIDENT_TYPE::BLACK_ICE, SERVICE_ACTION_TYPE::DELETE);
+		logt("BROADCAST", "BroadcastAlarmUpdatePacket(%u, SERVICE_INCIDENT_TYPE::BLACK_ICE, SERVICE_ACTION_TYPE::DELETE);", GS->node.configuration.nodeId);
 	}
 }
 
@@ -233,30 +235,17 @@ void AlarmModule::BroadcastPenguinAdvertisingPacket()
 	if (nearestRescueLaneNodeId != 0 || nearestRescueLaneOppositeLaneNodeId != 0 ||
 		nearestTrafficJamNodeId != 0 || nearestTrafficJamOppositeLaneNodeId != 0 ||
 		nearestBlackIceNodeId != 0 || nearestBlackIceOppositeLaneNodeId != 0 ||
-		rescueLaneAtMyNode || trafficJamAtMyNode || blackIceAtMyNode)
+		rescueLaneAtMyNode || trafficJamAtMyNode || blackIceAtMyNode || !rescueLaneAtMyNode || !trafficJamAtMyNode || !blackIceAtMyNode)
 	{
-		if(rescueLaneAtMyNode) {
-			alarmData->nearestRescueLaneNodeId = GS->node.configuration.nodeId;
-		} else {
-			alarmData->nearestRescueLaneNodeId = nearestRescueLaneNodeId;
-		}
-
-		if(trafficJamAtMyNode) {
-			alarmData->nearestTrafficJamNodeId = GS->node.configuration.nodeId;
-		} else {
-			alarmData->nearestTrafficJamNodeId = nearestTrafficJamNodeId;
-		}
-
-		if(blackIceAtMyNode) {
-			alarmData->nearestBlackIceNodeId = GS->node.configuration.nodeId;
-		} else {
-			alarmData->nearestBlackIceNodeId = nearestBlackIceNodeId;
-		}
+		alarmData->nearestRescueLaneNodeId = rescueLaneAtMyNode ? GS->node.configuration.nodeId : nearestRescueLaneNodeId;
+		alarmData->nearestTrafficJamNodeId = trafficJamAtMyNode ? GS->node.configuration.nodeId : nearestTrafficJamNodeId;
+		alarmData->nearestBlackIceNodeId = blackIceAtMyNode ? GS->node.configuration.nodeId : nearestBlackIceNodeId;
 
 		alarmData->nearestRescueLaneOppositeLaneNodeId = nearestRescueLaneOppositeLaneNodeId;
 		alarmData->nearestTrafficJamOppositeLaneNodeId = nearestTrafficJamOppositeLaneNodeId;
 		alarmData->nearestBlackIceOppositeLaneNodeId = nearestBlackIceOppositeLaneNodeId;
 	}
+
 	alarmData->direction =GS->node.configuration.direction;
 
 	//logt("ALARM_SYSTEM", "unsecureCount: %u", meshDeviceIdArray.size());
@@ -267,6 +256,25 @@ void AlarmModule::BroadcastPenguinAdvertisingPacket()
 
 	u32 length = SIZEOF_ADV_STRUCTURE_FLAGS + SIZEOF_ADV_STRUCTURE_UUID16 + SIZEOF_ADV_STRUCTURE_ALARM_SERVICE_DATA;
 	job.advDataLength = length;
+
+	// Log AdvPacketPenguinData
+	// logt("BROADCAST", "len: %u", alarmData->len);
+	// logt("BROADCAST", "type: %u", alarmData->type);
+	// logt("BROADCAST", "uuid: %u", alarmData->uuid);
+	// logt("BROADCAST", "messageType: %u", alarmData->messageType);
+	// logt("BROADCAST", "nodeId: %u", alarmData->nodeId);
+	// logt("BROADCAST", "boardType: %u", alarmData->boardType);
+	// logt("BROADCAST", "currentClusterSize: %u", alarmData->currentClusterSize);
+	// logt("BROADCAST", "clusterSize: %u", alarmData->clusterSize);
+	// logt("BROADCAST", "networkId: %u", alarmData->networkId);
+	logt("BROADCAST", "nearestRescueLaneNodeId: %u", alarmData->nearestRescueLaneNodeId);
+	logt("BROADCAST", "nearestTrafficJamNodeId: %u", alarmData->nearestTrafficJamNodeId);
+	logt("BROADCAST", "nearestBlackIceNodeId: %u", alarmData->nearestBlackIceNodeId);
+	// logt("BROADCAST", "nearestRescueLaneOppositeLaneNodeId: %u", alarmData->nearestRescueLaneOppositeLaneNodeId);
+	// logt("BROADCAST", "nearestTrafficJamOppositeLaneNodeId: %u", alarmData->nearestTrafficJamOppositeLaneNodeId);
+	// logt("BROADCAST", "nearestBlackIceOppositeLaneNodeId: %u", alarmData->nearestBlackIceOppositeLaneNodeId);
+	// logt("BROADCAST", "direction: %u", alarmData->direction);
+	logt("BROADCAST", " ");
 
 	//Either update the job or create it if not done
 	if (alarmJobHandle == NULL)
@@ -315,14 +323,18 @@ void AlarmModule::MeshMessageReceivedHandler(BaseConnection *connection, BaseCon
 				if (trafficJamAtMyNode)
 				{
 					BroadcastAlarmUpdatePacket(nearestTrafficJamNodeId, SERVICE_INCIDENT_TYPE::TRAFFIC_JAM, SERVICE_ACTION_TYPE::SAVE);
+					logt("BROADCAST", "BroadcastAlarmUpdatePacket(%u, SERVICE_INCIDENT_TYPE::TRAFFIC_JAM, SERVICE_ACTION_TYPE::SAVE); (MeshMessageReceivedHandler)", GS->node.configuration.nodeId);
 				}
 				if (blackIceAtMyNode)
 				{
 					BroadcastAlarmUpdatePacket(nearestBlackIceNodeId, SERVICE_INCIDENT_TYPE::BLACK_ICE, SERVICE_ACTION_TYPE::SAVE);
+					logt("BROADCAST", "BroadcastAlarmUpdatePacket(%u, SERVICE_INCIDENT_TYPE::BLACK_ICE, SERVICE_ACTION_TYPE::SAVE); (MeshMessageReceivedHandler)", GS->node.configuration.nodeId);
+					
 				}
 				if (rescueLaneAtMyNode)
 				{
 					BroadcastAlarmUpdatePacket(nearestRescueLaneNodeId, SERVICE_INCIDENT_TYPE::RESCUE_LANE, SERVICE_ACTION_TYPE::SAVE);
+					logt("BROADCAST", "BroadcastAlarmUpdatePacket(%u, SERVICE_INCIDENT_TYPE::RESCUE_LANE, SERVICE_ACTION_TYPE::SAVE); (MeshMessageReceivedHandler)", GS->node.configuration.nodeId);
 				}
 			}
 			if (packet->actionType == AlarmModuleTriggerActionMessages::SET_ALARM_SYSTEM_UPDATE)
@@ -531,13 +543,16 @@ void AlarmModule::GapAdvertisementReportEventHandler(const GapAdvertisementRepor
 				rescueLaneAtMyNode = true;
 				rescueTimer = 10;
 				BroadcastAlarmUpdatePacket(GS->node.configuration.nodeId, SERVICE_INCIDENT_TYPE::RESCUE_LANE, SERVICE_ACTION_TYPE::SAVE);
+				logt("BROADCAST", "BroadcastAlarmUpdatePacket(%u, SERVICE_INCIDENT_TYPE::RESCUE_LANE, SERVICE_ACTION_TYPE::SAVE);", GS->node.configuration.nodeId);
 			} else {
 				if(GS->node.configuration.nodeId % 2 != 0) {
 					nearestRescueLaneOppositeLaneNodeId = GS->node.configuration.nodeId + 1;
 					BroadcastAlarmUpdatePacket(GS->node.configuration.nodeId + 1, SERVICE_INCIDENT_TYPE::RESCUE_LANE, SERVICE_ACTION_TYPE::SAVE);
+					logt("BROADCAST", "BroadcastAlarmUpdatePacket(%u, SERVICE_INCIDENT_TYPE::RESCUE_LANE, SERVICE_ACTION_TYPE::SAVE);", GS->node.configuration.nodeId);
 				} else {
 					nearestRescueLaneOppositeLaneNodeId = GS->node.configuration.nodeId - 1;
 					BroadcastAlarmUpdatePacket(GS->node.configuration.nodeId - 1, SERVICE_INCIDENT_TYPE::RESCUE_LANE, SERVICE_ACTION_TYPE::SAVE);
+					logt("BROADCAST", "BroadcastAlarmUpdatePacket(%u, SERVICE_INCIDENT_TYPE::RESCUE_LANE, SERVICE_ACTION_TYPE::SAVE);", GS->node.configuration.nodeId);
 				}
 			}
 		}
@@ -584,6 +599,7 @@ void AlarmModule::TimerEventHandler(u16 passedTimeDs)
 		if(rescueTimer == 0 && rescueLaneAtMyNode) {
 			rescueLaneAtMyNode = false;
 			BroadcastAlarmUpdatePacket(GS->node.configuration.nodeId, SERVICE_INCIDENT_TYPE::RESCUE_LANE, SERVICE_ACTION_TYPE::DELETE);
+			logt("BROADCAST", "BroadcastAlarmUpdatePacket(%u, SERVICE_INCIDENT_TYPE::RESCUE_LANE, SERVICE_ACTION_TYPE::DELETE);", GS->node.configuration.nodeId);
 		} else if (rescueTimer > 0){
 			rescueTimer--;
 		}
@@ -592,32 +608,31 @@ void AlarmModule::TimerEventHandler(u16 passedTimeDs)
 	// Traffic jam timer
 	if (SHOULD_IV_TRIGGER(GS->appTimerDs + GS->appTimerRandomOffsetDs, passedTimeDs, ALARM_MODULE_TRAFFIC_JAM_DETECTION_TIME_DS))
 	{
-		for (int i = 0; i < TRAFFIC_JAM_POOL_SIZE; i++)
-		{
-			logt("ALARMMOD", "trafficJamPool1[%d] = 0x%X", i, trafficJamPool1[i]);
-		}
-		logt("ALARMMOD", " ");
-		for (int i = 0; i < TRAFFIC_JAM_POOL_SIZE; i++)
-		{
-			logt("ALARMMOD", "trafficJamPool2[%d] = 0x%X", i, trafficJamPool2[i]);
-		}
-		logt("ALARMMOD", " ");
+		// Log trafficJamPools
+		// for (int i = 0; i < TRAFFIC_JAM_POOL_SIZE; i++)
+		// {
+		// 	logt("ALARMMOD", "trafficJamPool1[%d] = 0x%X", i, trafficJamPool1[i]);
+		// }
+		// logt("ALARMMOD", " ");
+		// for (int i = 0; i < TRAFFIC_JAM_POOL_SIZE; i++)
+		// {
+		// 	logt("ALARMMOD", "trafficJamPool2[%d] = 0x%X", i, trafficJamPool2[i]);
+		// }
+		// logt("ALARMMOD", " ");
 
 		u8 intersections = intersection(trafficJamPool1, trafficJamPool2);
-		logt("ALARMMOD", "intersection = %u", intersections);
-		logt("ALARMMOD", "nearestTrafficJamNodeId = %u", nearestTrafficJamNodeId);
 
 		if (!trafficJamAtMyNode && intersections == TRAFFIC_JAM_DETECTED)
 		{
 			trafficJamAtMyNode = true;
 			BroadcastAlarmUpdatePacket(GS->node.configuration.nodeId, SERVICE_INCIDENT_TYPE::TRAFFIC_JAM, SERVICE_ACTION_TYPE::SAVE);
-			logt("ALARMMOD", "BroadcastAlarmUpdatePacket(%u, SERVICE_INCIDENT_TYPE::TRAFFIC_JAM, SERVICE_ACTION_TYPE::SAVE);", GS->node.configuration.nodeId);
+			logt("BROADCAST", "BroadcastAlarmUpdatePacket(%u, SERVICE_INCIDENT_TYPE::TRAFFIC_JAM, SERVICE_ACTION_TYPE::SAVE);", GS->node.configuration.nodeId);
 		}
 		else if (trafficJamAtMyNode && intersections != TRAFFIC_JAM_DETECTED)
 		{
 			trafficJamAtMyNode = false;
 			BroadcastAlarmUpdatePacket(GS->node.configuration.nodeId, SERVICE_INCIDENT_TYPE::TRAFFIC_JAM, SERVICE_ACTION_TYPE::DELETE);
-			logt("ALARMMOD", "BroadcastAlarmUpdatePacket(%u, SERVICE_INCIDENT_TYPE::TRAFFIC_JAM, SERVICE_ACTION_TYPE::DELETE);", GS->node.configuration.nodeId);
+			logt("BROADCAST", "BroadcastAlarmUpdatePacket(%u, SERVICE_INCIDENT_TYPE::TRAFFIC_JAM, SERVICE_ACTION_TYPE::DELETE);", GS->node.configuration.nodeId);
 		}
 
 		if (trafficJamInterval == 0)

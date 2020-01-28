@@ -27,21 +27,8 @@
 // **
 // ****************************************************************************/
 ////////////////////////////////////////////////////////////////////////////////
-#include "Config.h"
-#include "Node.h"
-#include "Utility.h"
-#include "DebugModule.h"
-#include "StatusReporterModule.h"
-#include "AdvertisingModule.h"
-#include "ScanningModule.h"
-#include "EnrollmentModule.h"
-#include "IoModule.h"
-#include "MeshAccessModule.h"
-#include "GlobalState.h"
-#include "AlarmModule.h"
-#include "AssetModule.h"
+#include <FruityHalNrf.h>
 
-#define UART_BAUDRATE_BAUDRATE_Baud1M (0x10000000UL) /*!< 1Mega baud */
 enum class ClockSource : u8
 {
 	CLOCK_SOURCE_RC = 0,
@@ -65,11 +52,12 @@ enum class ClockAccuracy : u8
 	CLOCK_ACCURACY_1_PPM = 11,
 };
 
-void setFeaturesetConfiguration_github(ModuleConfiguration *config, void *module)
+//PCA10040 - nRF52 DK
+void setBoard_5(BoardConfiguration *c)
 {
-	if (config->moduleId == ModuleId::BOARD_CONFIG)
+#ifdef NRF52
+	if (c->boardType == 5)
 	{
-		BoardConfiguration *c = (BoardConfiguration *)config;
 		c->led1Pin = 18;
 		c->led2Pin = 19;
 		c->led3Pin = 17;
@@ -89,45 +77,5 @@ void setFeaturesetConfiguration_github(ModuleConfiguration *config, void *module
 		// Use chip input voltage measurement
 		c->batteryAdcInputPin = -2;
 	}
-	else if (config->moduleId == ModuleId::CONFIG)
-	{
-		Conf::getInstance().defaultLedMode = LedMode::CONNECTIONS;
-		Conf::getInstance().terminalMode = TerminalMode::PROMPT;
-	}
-	else if (config->moduleId == ModuleId::NODE)
-	{
-		//Specifies a default enrollment for the github configuration
-		//This enrollment will be overwritten as soon as the node is either enrolled or the enrollment removed
-		NodeConfiguration *c = (NodeConfiguration *)config;
-		c->enrollmentState = EnrollmentState::ENROLLED;
-		// network id has to be the same for all devices
-		c->networkId = 11;
-		// nodeId to use for the devices to flash
-		c->nodeId = 1;
-		c->direction = 1;
-		c->boardType = 1;
-		c->checkDirection = true;
-		CheckedMemset(c->networkKey, 0x00, 16);
-	}
-}
-
-u32 initializeModules_github(bool createModule)
-{
-	u32 size = 0;
-	size += GS->InitializeModule<DebugModule>(createModule);
-	size += GS->InitializeModule<StatusReporterModule>(createModule);
-	size += GS->InitializeModule<AdvertisingModule>(createModule);
-	size += GS->InitializeModule<ScanningModule>(createModule);
-	size += GS->InitializeModule<EnrollmentModule>(createModule);
-	size += GS->InitializeModule<IoModule>(createModule);
-	size += GS->InitializeModule<MeshAccessModule>(createModule);
-	size += GS->InitializeModule<AssetModule>(createModule);
-	size += GS->InitializeModule<AlarmModule>(createModule);
-
-	return size;
-}
-
-DeviceType getDeviceType_github()
-{
-	return DeviceType::STATIC;
+#endif
 }

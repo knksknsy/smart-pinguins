@@ -1,5 +1,6 @@
 package de.hdm.smart_penguins.ui.home
 
+import android.os.AsyncTask
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -11,8 +12,9 @@ import de.hdm.smart_penguins.R
 import de.hdm.smart_penguins.ui.BaseFragment
 import kotlinx.android.synthetic.main.fragment_home.*
 import java.io.BufferedReader
-import java.io.IOException
 import java.io.InputStreamReader
+import java.util.*
+import kotlin.collections.ArrayList
 
 
 class HomeFragment : BaseFragment() {
@@ -34,6 +36,8 @@ class HomeFragment : BaseFragment() {
 
     val cases = ArrayList<Int>()
 
+    var blocker = false
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -43,50 +47,57 @@ class HomeFragment : BaseFragment() {
         return inflater.inflate(R.layout.fragment_home, container, false)
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        fabProduct.setOnClickListener {
-            if(developerView.isVisible){
-                developerView.visibility = View.GONE
-                productView.visibility = View.VISIBLE
-            }else{
-                developerView.visibility = View.VISIBLE
-                productView.visibility = View.GONE
-            }
+    inner class AsyncTimer: AsyncTask<Int, String, String>() {
+        override fun onPreExecute() {
+            super.onPreExecute()
+            blocker = true
         }
-    }
 
-    private fun updateTimer() {
-            try {
-                if(isVisible) {
-                    val process = Runtime.getRuntime().exec("logcat -d *:E")
-                    val bufferedReader = BufferedReader(
-                        InputStreamReader(process.inputStream)
-                    )
-                    var log = StringBuilder()
-                    var line: String? = ""
-                    while (bufferedReader.readLine().also({ line = it }) != null) {
-                        log.append("\n")
-                        log.append(line?.replaceBefore("*penguins", ""))
-                    }
-                    scrollview.fullScroll(View.FOCUS_DOWN)
+        override fun doInBackground(vararg params: Int?): String {
+            var sender = "Test"
 
-                    if (log.length > 80000) {
-                        log = log.delete(0, log.length / 2)
-                        Log.e("logDelete", log.length.toString())
-                    }
+            var log = StringBuilder()
+            val process = Runtime.getRuntime().exec("logcat -d *:E")
+            val bufferedReader = BufferedReader(
+                InputStreamReader(process.inputStream)
+            )
+            var line: String? = ""
+            while (bufferedReader.readLine().also({ line = it }) != null) {
+                log.append(line)
+            }
 
-                    //terminal.setMovementMethod(ScrollingMovementMethod())
-                    terminal.text = log.toString()
+            if (log.length > 80000) {
+                log = log.delete(0, log.length / 2)
+            }
+
+            sender = log.toString()
+
+            return sender
+        }
+
+        override fun onPostExecute(result: String?) {
+            super.onPostExecute(result)
+            terminal.text = result
+            scrollview.fullScroll(View.FOCUS_DOWN)
+
+            fabProduct.setOnClickListener {
+                if (developerView.isVisible) {
+                    developerView.visibility = View.GONE
+                    productView.visibility = View.VISIBLE
+                } else {
+                    developerView.visibility = View.VISIBLE
+                    productView.visibility = View.GONE
                 }
             }
-            catch (e: IOException) { // Handle Exception
-                Log.e("Terminal Error",e.toString())
-            }
+
+            blocker = false
+
+        }
     }
 
     override fun onResume() {
         super.onResume()
+
         nodesLiveData.observe(this, Observer { data ->
             if (data.size > 0 && data[0].messageMeshAccessBroadcast != null) {
                 nodeId.text =
@@ -109,8 +120,8 @@ class HomeFragment : BaseFragment() {
             }
         })
         alarm.observe(this, Observer { alarm ->
-            Log.e(TAG,"Received Alarm")
             if (alarm != null) {
+                Log.e(TAG,"Received Alarm")
                 //if (alarm.currentNode !in dataManager.displayedAlarms && cases.size == 0) {
                 if(cases.size == 0) {
                     if (STATE_NONE != alarm.nearestRescueLaneNodeId) {
@@ -138,8 +149,16 @@ class HomeFragment : BaseFragment() {
                     )
                 }
             }
-            updateTimer()
-            tickTack();
+            val asyncTimer = AsyncTimer()
+
+            if(blocker == false){
+                asyncTimer.execute()
+            }
+            else{
+                asyncTimer.cancel(true)
+            }
+
+            tickTack()
         })
     }
 

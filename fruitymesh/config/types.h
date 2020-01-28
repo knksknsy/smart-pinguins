@@ -493,8 +493,10 @@ struct BoardConfiguration : ModuleConfiguration {
 	int8_t dBmRX;
 	// This value should be calibrated at 1m distance, set by board configs
 	int8_t calibratedTX;
+	uint8_t lfClockAccuracy;
 
 	uint8_t lfClockSource;
+
 	int8_t batteryAdcInputPin;
 	int8_t batteryMeasurementEnablePin;
 

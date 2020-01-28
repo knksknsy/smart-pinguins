@@ -171,6 +171,7 @@ void BootFruityMesh()
 	Logger::getInstance().enableTag("TEST");
 	Logger::getInstance().enableTag("MODULE");
 	Logger::getInstance().enableTag("ALARMMOD");
+//	Logger::getInstance().enableTag("BROADCAST");
 	Logger::getInstance().enableTag("STATUSMOD");
 //	Logger::getInstance().enableTag("DEBUGMOD");
 	Logger::getInstance().enableTag("ENROLLMOD");
