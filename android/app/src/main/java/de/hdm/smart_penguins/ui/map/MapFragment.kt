@@ -111,7 +111,7 @@ class MapFragment : Fragment(), OnMapReadyCallback {
         if (gMap != null) {
             gMap!!.clear()
             gMap!!.setMapStyle(MapStyleOptions.loadRawResourceStyle(context, R.raw.map_style))
-            gMap!!.isBuildingsEnabled = false
+            gMap!!.isBuildingsEnabled = true
             for (node: PersistentNode in dataManager.qrScannedNodes) {
                 gMap!!.addMarker(createMarkerOptions(node))
             }

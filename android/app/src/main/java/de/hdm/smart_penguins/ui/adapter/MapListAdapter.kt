@@ -32,8 +32,7 @@ class MapListAdapter(
         holder.placeButton.setOnClickListener {
             clickAction.invoke(node, position)
         }
-        holder.deviceName.text = node.nodeID.toString()
-        holder.deviceNumber.text = node.type.toString()
+        holder.deviceNumber.text = node.nodeID.toString()
     }
 
 
@@ -44,7 +43,6 @@ class MapListAdapter(
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val placeButton = itemView.placeButton
         val itemLayout = itemView.itemLayout
-        val deviceName = itemView.deviceName
         val deviceNumber = itemView.deviceNumber
     }
 }
