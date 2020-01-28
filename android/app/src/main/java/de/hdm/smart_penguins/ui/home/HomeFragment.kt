@@ -9,12 +9,11 @@ import android.view.ViewGroup
 import androidx.core.view.isVisible
 import androidx.lifecycle.Observer
 import de.hdm.smart_penguins.R
+import de.hdm.smart_penguins.data.Constants
 import de.hdm.smart_penguins.ui.BaseFragment
 import kotlinx.android.synthetic.main.fragment_home.*
 import java.io.BufferedReader
 import java.io.InputStreamReader
-import java.util.*
-import kotlin.collections.ArrayList
 
 
 class HomeFragment : BaseFragment() {
@@ -63,7 +62,12 @@ class HomeFragment : BaseFragment() {
             )
             var line: String? = ""
             while (bufferedReader.readLine().also({ line = it }) != null) {
-                log.append(line)
+                if(line?.contains(Constants.TAG)!!) {
+                    line = line!!.replaceBefore(Constants.TAG,"")
+                    log.appendln(line )
+                }else{
+                    log.appendln("")
+                }
             }
 
             if (log.length > 80000) {
@@ -163,7 +167,7 @@ class HomeFragment : BaseFragment() {
     }
 
     private fun tickTack() {
-        Log.e(TAG,"Counter " + counter + " Cases: " + cases.size)
+        Log.e(Constants.TAG,"Counter " + counter + " Cases: " + cases.size)
         if (counter > 0 && cases.size > 0) {
             display(cases[0])
             displayCounter += 1

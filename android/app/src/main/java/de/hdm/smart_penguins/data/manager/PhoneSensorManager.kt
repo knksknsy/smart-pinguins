@@ -5,8 +5,11 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.os.Handler
+import android.util.Log
 import de.hdm.smart_penguins.SmartApplication
 import de.hdm.smart_penguins.component.AlarmLiveData
+import de.hdm.smart_penguins.data.Constants
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -17,6 +20,7 @@ class PhoneSensorManager @Inject constructor(
 
 ) : SensorEventListener {
 
+    private var isDatamanagerBlocked: Boolean = false
     @Inject
     lateinit var connectionManager: ConnectionManager
 
@@ -84,13 +88,24 @@ class PhoneSensorManager @Inject constructor(
                 currentPhoneDirection = 0f
             }
             // set phone direction in dataManager if it changed
-            if (dataManager.direction != Math.round(currentPhoneDirection)) {
+            if (!isDatamanagerBlocked  && Math.round(currentPhoneDirection) != dataManager.direction) {
+                setDirectionBlocker()
                 dataManager.direction = Math.round(currentPhoneDirection)
 
                 connectionManager.updateBleBroadcasting()
+                Log.e(Constants.TAG, "Saved new direction: " + Math.round(currentPhoneDirection))
             }
 
         }
+    }
+
+    private fun setDirectionBlocker() {
+        this.isDatamanagerBlocked = true
+        val handler = Handler()
+        val initiationRunnable = {
+            isDatamanagerBlocked = false
+        }
+        handler.postDelayed(initiationRunnable, 1500)
     }
 
     /**

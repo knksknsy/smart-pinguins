@@ -2,6 +2,7 @@ package de.hdm.smart_penguins.data
 
 object Constants {
 
+    val TAG: String = "//"
     val VAR_NOT_SET = -1
     val INTENT_EXTRA_DEVICE = "device"
 

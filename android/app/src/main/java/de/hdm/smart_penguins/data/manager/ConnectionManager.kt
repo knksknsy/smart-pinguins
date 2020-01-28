@@ -129,6 +129,7 @@ class ConnectionManager @Inject constructor(
         } else {
             alarm.value = null
         }
+        Log.e(Constants.TAG,"Nearby Nodes: " + nodeList.size)
     }
 
     private fun checkNodeForAlarm(broadcast: MessageMeshBroadcast?) {
