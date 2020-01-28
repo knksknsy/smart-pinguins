@@ -67,7 +67,7 @@ class ConnectionManager @Inject constructor(
         override fun onBatchScanResults(results: List<ScanResult>) {
             super.onBatchScanResults(results)
             broadcastUpdateTimer += 1
-            if(doUpdateBroacast) updateBleBroadcasting()
+            if (doUpdateBroacast) updateBleBroadcasting()
             if (results.size > 0) {
                 mScanResultHandler.removeCallbacks(mScanResultRunnable)
                 receiveMeshAccessBroadcastFromBatch(results)
@@ -133,10 +133,7 @@ class ConnectionManager @Inject constructor(
 
     private fun checkNodeForAlarm(broadcast: MessageMeshBroadcast?) {
         if (broadcast != null) {
-            val direction = dataManager.getDirectionForNode(broadcast.deviceNumber)
-            val isMyDirection = sensorManager.isMyDirection(
-                ternary(direction != VAR_NOT_SET, direction, broadcast.direction.toInt())
-            )
+            val isMyDirection = sensorManager.isMyDirection(broadcast.direction.toInt())
             if ((directionAndNodeCheck(broadcast, isMyDirection))) {
                 alarm.value = Alarm(
                     (ternary(
@@ -354,7 +351,7 @@ class ConnectionManager @Inject constructor(
                 stopBLEScanner()
                 initBleBroadcasting()
             }
-        }else{
+        } else {
             doUpdateBroacast = true
         }
     }
