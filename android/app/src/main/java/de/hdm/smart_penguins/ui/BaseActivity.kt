@@ -8,10 +8,11 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Bundle
+import android.provider.Settings
+import android.provider.Settings.SettingNotFoundException
 import android.util.Log
 import androidx.annotation.Nullable
 import androidx.appcompat.app.AppCompatActivity
-import de.hdm.smart_penguins.R
 import de.hdm.smart_penguins.SmartApplication
 import de.hdm.smart_penguins.component.BleNodesLiveData
 import de.hdm.smart_penguins.data.Constants
@@ -22,6 +23,7 @@ import de.hdm.smart_penguins.utils.PermissionDependentTask
 import de.hdm.smart_penguins.utils.PermissionsHandler
 import java.io.File
 import javax.inject.Inject
+
 
 open class BaseActivity : AppCompatActivity() {
 
@@ -149,17 +151,48 @@ open class BaseActivity : AppCompatActivity() {
     fun showBLuetoothActivationDialog() {
         if (!isBluetoothDialogShown) {
             isBluetoothDialogShown = true
-            val builder = AlertDialog.Builder(this, R.style.AppTheme)
+            val builder = AlertDialog.Builder(this)
             builder.setTitle("Bluetooth Aktivierung")
             builder.setMessage("Damit die App richtig funktioniert muss Bluetooth eingeschalten werden.")
             builder.setCancelable(false)
             builder.setPositiveButton("Ok") { dialog, id ->
                 setBluetooth(true)
                 isBluetoothDialogShown = false
+                initBLEScanning()
             }
             builder.setNegativeButton("Beenden") { dialog, id -> finishAndRemoveTask() }
             builder.create().show()
         }
+    }
+
+    fun showLocationDialog() {
+        if(!isLocationEnabled()) {
+            AlertDialog.Builder(this)
+                .setMessage("GPS location muss aktiviert sein!")
+                .setPositiveButton("Öffne Einstellungen",
+                    { dialog, which ->
+                        this.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
+                    })
+                .setNegativeButton("Abbrechen", { dialog, which ->
+                    finish()
+                })
+                .show()
+        }
+    }
+
+    fun isLocationEnabled(): Boolean {
+        var locationMode = 0
+         locationMode = try {
+                Settings.Secure.getInt(
+                    this.contentResolver,
+                    Settings.Secure.LOCATION_MODE
+                )
+            } catch (e: SettingNotFoundException) {
+                e.printStackTrace()
+                return false
+            }
+        return  locationMode != Settings.Secure.LOCATION_MODE_OFF
+
     }
 
     private fun setBluetooth(enabled: Boolean) {

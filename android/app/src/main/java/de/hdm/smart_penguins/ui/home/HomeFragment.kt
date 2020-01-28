@@ -101,7 +101,6 @@ class HomeFragment : BaseFragment() {
 
     override fun onResume() {
         super.onResume()
-
         nodesLiveData.observe(this, Observer { data ->
             if (data.size > 0 && data[0].messageMeshAccessBroadcast != null) {
                 nodeId.text =

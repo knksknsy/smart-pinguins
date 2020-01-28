@@ -98,7 +98,7 @@ class ConnectionManager @Inject constructor(
                         val node = BleNode(scanResult)
                         if (deviceBroadcast.messageType == MESSAGE_TYPE_DEVICE_BROADCAST) {
                             Log.e(TAG, "Received device broadcast")
-                            if (deviceBroadcast.deviceType == Constants.DEVICE_TYPE_BIKE && dataManager.isRightTurn) {
+                            if (deviceBroadcast.deviceType == Constants.DEVICE_TYPE_BIKE && dataManager.isRightTurn && sensorManager.isMyDirection(deviceBroadcast.direction)) {
                                 bikeAlarmId = deviceBroadcast.deviceId
                             }
                         } else if (node.messageMeshAccessBroadcast!!.messageType == Constants.MESSAGE_TYPE_BROADCAST) {

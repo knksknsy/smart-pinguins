@@ -33,6 +33,11 @@ class MainActivity : BaseActivity() {
         startBLEScanning();
     }
 
+    override fun onPostResume() {
+        super.onPostResume()
+        showLocationDialog()
+    }
+
     override fun onPause() {
         super.onPause()
         stopBLEScanning()
