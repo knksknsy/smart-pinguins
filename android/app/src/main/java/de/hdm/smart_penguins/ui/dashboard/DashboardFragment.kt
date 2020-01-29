@@ -129,6 +129,7 @@ class DashboardFragment : BaseFragment() {
             left_btn.setBackgroundColor(resources.getColor(R.color.defaultBtn))
         }
             dataManager.isLeftTurn = !dataManager.isLeftTurn
+            dataManager.isRightTurn = false
     }
 
     private fun onRight() {
@@ -138,6 +139,7 @@ class DashboardFragment : BaseFragment() {
             right_btn.setBackgroundColor(resources.getColor(R.color.defaultBtn))
         }
         dataManager.isRightTurn = !dataManager.isRightTurn
+        dataManager.isLeftTurn = false
     }
 
     private fun onEmergency() {
