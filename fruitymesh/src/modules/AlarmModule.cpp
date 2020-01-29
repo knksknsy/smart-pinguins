@@ -270,9 +270,9 @@ void AlarmModule::BroadcastPenguinAdvertisingPacket()
 	logt("BROADCAST", "nearestRescueLaneNodeId: %u", alarmData->nearestRescueLaneNodeId);
 	logt("BROADCAST", "nearestTrafficJamNodeId: %u", alarmData->nearestTrafficJamNodeId);
 	logt("BROADCAST", "nearestBlackIceNodeId: %u", alarmData->nearestBlackIceNodeId);
-	// logt("BROADCAST", "nearestRescueLaneOppositeLaneNodeId: %u", alarmData->nearestRescueLaneOppositeLaneNodeId);
-	// logt("BROADCAST", "nearestTrafficJamOppositeLaneNodeId: %u", alarmData->nearestTrafficJamOppositeLaneNodeId);
-	// logt("BROADCAST", "nearestBlackIceOppositeLaneNodeId: %u", alarmData->nearestBlackIceOppositeLaneNodeId);
+	logt("BROADCAST", "nearestRescueLaneOppositeLaneNodeId: %u", alarmData->nearestRescueLaneOppositeLaneNodeId);
+	logt("BROADCAST", "nearestTrafficJamOppositeLaneNodeId: %u", alarmData->nearestTrafficJamOppositeLaneNodeId);
+	logt("BROADCAST", "nearestBlackIceOppositeLaneNodeId: %u", alarmData->nearestBlackIceOppositeLaneNodeId);
 	// logt("BROADCAST", "direction: %u", alarmData->direction);
 	logt("BROADCAST", " ");
 
@@ -538,18 +538,18 @@ void AlarmModule::GapAdvertisementReportEventHandler(const GapAdvertisementRepor
 		// 	 packetData->isSlippery,
 		// 	 packetData->isJam);
 
-		if(packetData->deviceType == DeviceType::EMERGENCY) {
-			if(isMyDirection(packetData->direction)) {
+		if (packetData->deviceType == DeviceType::EMERGENCY && !rescueLaneAtMyNode) {
+			if (isMyDirection(packetData->direction)) {
 				rescueLaneAtMyNode = true;
-				rescueTimer = 10;
+				rescueTimer = 10;	
 				BroadcastAlarmUpdatePacket(GS->node.configuration.nodeId, SERVICE_INCIDENT_TYPE::RESCUE_LANE, SERVICE_ACTION_TYPE::SAVE);
 				logt("BROADCAST", "BroadcastAlarmUpdatePacket(%u, SERVICE_INCIDENT_TYPE::RESCUE_LANE, SERVICE_ACTION_TYPE::SAVE);", GS->node.configuration.nodeId);
 			} else {
-				if(GS->node.configuration.nodeId % 2 != 0) {
+				if (GS->node.configuration.nodeId % 2 != 0 && nearestRescueLaneOppositeLaneNodeId != GS->node.configuration.nodeId + 1) {
 					nearestRescueLaneOppositeLaneNodeId = GS->node.configuration.nodeId + 1;
 					BroadcastAlarmUpdatePacket(GS->node.configuration.nodeId + 1, SERVICE_INCIDENT_TYPE::RESCUE_LANE, SERVICE_ACTION_TYPE::SAVE);
 					logt("BROADCAST", "BroadcastAlarmUpdatePacket(%u, SERVICE_INCIDENT_TYPE::RESCUE_LANE, SERVICE_ACTION_TYPE::SAVE);", GS->node.configuration.nodeId);
-				} else {
+				} else if (GS->node.configuration.nodeId % 2 == 0 && nearestRescueLaneOppositeLaneNodeId != GS->node.configuration.nodeId - 1) {
 					nearestRescueLaneOppositeLaneNodeId = GS->node.configuration.nodeId - 1;
 					BroadcastAlarmUpdatePacket(GS->node.configuration.nodeId - 1, SERVICE_INCIDENT_TYPE::RESCUE_LANE, SERVICE_ACTION_TYPE::SAVE);
 					logt("BROADCAST", "BroadcastAlarmUpdatePacket(%u, SERVICE_INCIDENT_TYPE::RESCUE_LANE, SERVICE_ACTION_TYPE::SAVE);", GS->node.configuration.nodeId);
@@ -595,13 +595,13 @@ void AlarmModule::TimerEventHandler(u16 passedTimeDs)
 
 	if (SHOULD_IV_TRIGGER(GS->appTimerDs + GS->appTimerRandomOffsetDs, passedTimeDs, RESCUE_CAR_TIMER_INTERVAL))
 	{
-
 		if(rescueTimer == 0 && rescueLaneAtMyNode) {
 			rescueLaneAtMyNode = false;
 			BroadcastAlarmUpdatePacket(GS->node.configuration.nodeId, SERVICE_INCIDENT_TYPE::RESCUE_LANE, SERVICE_ACTION_TYPE::DELETE);
 			logt("BROADCAST", "BroadcastAlarmUpdatePacket(%u, SERVICE_INCIDENT_TYPE::RESCUE_LANE, SERVICE_ACTION_TYPE::DELETE);", GS->node.configuration.nodeId);
 		} else if (rescueTimer > 0){
 			rescueTimer--;
+			logt("BROADCAST", "rescueTimer: %u", rescueTimer);
 		}
 	}
 

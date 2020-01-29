@@ -103,8 +103,8 @@ void setFeaturesetConfiguration_github(ModuleConfiguration *config, void *module
 		// network id has to be the same for all devices
 		c->networkId = 11;
 		// nodeId to use for the devices to flash
-		c->nodeId = 1;
-		c->direction = 1;
+		c->nodeId = 17;
+		c->direction = 8;
 		c->boardType = 1;
 		c->checkDirection = true;
 		CheckedMemset(c->networkKey, 0x00, 16);
